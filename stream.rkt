@@ -12,7 +12,7 @@ including some examples taken from the documentation for srfi/41
 ;[require math/number-theory]
 ;[provide [all-from-out math/number-theory]]
 
-[require http/request]
+;[require http/request]
 
 ;[require http]
 ;[require net/uri-codec]
