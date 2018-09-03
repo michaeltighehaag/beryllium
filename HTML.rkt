@@ -24,12 +24,10 @@
 [define [html:p al el] [cons 'p [cons [cons '@ al] el]]]
 
 
-[define [mk-html-page head-list body-list]
-  [html:html [list]
-              [list
+[define [mk-html html-attr-list head-list body-list]
+  [html:html html-attr-list [list
       [html:head [list] head-list]
       [html:body [list] body-list]
   ]]]
-
 
 
