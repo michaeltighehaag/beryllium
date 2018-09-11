@@ -13,12 +13,14 @@
 ;;;;;;; x3dom ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[define [mk-x3dom-head title x3dom-js x3dom-css]
+[define [mk-x3dom-head title x3dom-js x3dom-css jq-js cust-js]
   [list
     [html:meta [list [list 'http-equiv "X-UA-Compatible"] [list 'content "chrome=1"]][list]] 
     [html:title [list] [list title]]
     [html:link [list [list 'rel "stylesheet"] [list 'type "text/css"] [list 'href x3dom-css]][list]]
     [html:script [list [list 'type "text/javascript"] [list 'src x3dom-js]][list]]
+    [html:script [list [list 'type "text/javascript"] [list 'src jq-js]][list]]
+    [html:script [list][list cust-js]]
   ]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -119,21 +121,41 @@
   [x3d:Background [list [list 'skyColor "0 0 0"]][list]] 
 
   [x3d:TimeSensor [list [list 'DEF "myClock"] [list 'cycleInterval "5.0"] [list 'loop "true"] [list 'enabled "true"] [list 'first "true"]] [list]]
-  [x3d:ColorInterpolator [list [list 'DEF "myColor"] [list 'key "0.0 0.333 0.666 1.0"] [list 'keyValue "0 1 1 1 0 1 1 1 0 0 1 1"]] [list]]
-  [x3d:ROUTE [list [list 'fromField "fraction_changed"] [list 'fromNode "myClock"] [list 'toField "set_fraction"] [list 'toNode "myColor"]] [list]]
-
-  [x3d:Material [list [list 'DEF "myMaterial2"] [list 'emissiveColor "0.5,0.5,0.5"]] [list]]
   [x3d:Coordinate [list [list 'DEF "mycoordinatss"] [list 'point "-3 -2 2   3 -2 2   3 2 2   -3 2 2   3 2 -2   -3 2 -2   -3 -2 -2   3 -2 -2"]] [list]]
 
-    
+  
+  [x3d:ColorInterpolator [list [list 'DEF "myColor1"] [list 'key "0.0 0.333 0.666 1.0"] [list 'keyValue "0 1 1 1 0 1 1 1 0 0 1 1"]] [list]]
+  [x3d:ROUTE [list [list 'fromField "fraction_changed"] [list 'fromNode "myClock"] [list 'toField "set_fraction"] [list 'toNode "myColor1"]] [list]]
+  [x3d:Material [list [list 'DEF "myMaterial1"] [list 'emissiveColor "0.5,0.5,0.5"]] [list]]
+  [x3d:Shape [list] [list 
+    [x3d:Appearance [list][list [x3d:Material [list [list 'USE "myMaterial1"]][list]]]]
+    [x3d:IndexedLineSet [list [list 'coordIndex "0 1 -1 1 2 -1 2 3 -1 3 0 -1 "]] 
+      [list [x3d:Coordinate [list [list 'USE "mycoordinatss"]][list]]]]]]
+  [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode "myColor1"] [list 'toField "emissiveColor"] [list 'toNode "myMaterial1"]][list]]
+
+  [x3d:ColorInterpolator [list [list 'DEF "myColor2"] [list 'key "0.0 0.333 0.666 1.0"] [list 'keyValue " 1 0 1 1 1 0 0 1 1 1 0 1 "]] [list]]
+  [x3d:ROUTE [list [list 'fromField "fraction_changed"] [list 'fromNode "myClock"] [list 'toField "set_fraction"] [list 'toNode "myColor2"]] [list]]
+  [x3d:Material [list [list 'DEF "myMaterial2"] [list 'emissiveColor "0.5,0.5,0.5"]] [list]]
   [x3d:Shape [list] [list 
     [x3d:Appearance [list][list [x3d:Material [list [list 'USE "myMaterial2"]][list]]]]
-    [x3d:IndexedLineSet [list [list 'coordIndex "0 1 -1 1 2 -1 2 3 -1 3 0 -1 4 5 -1 5 6 -1 6 7 -1 7 4 -1 0 6 -1 1 7 -1 2 4 -1 3 5 -1"]] 
+    [x3d:IndexedLineSet [list [list 'coordIndex " 4 5 -1 5 6 -1 6 7 -1 7 4 -1 "]] 
       [list [x3d:Coordinate [list [list 'USE "mycoordinatss"]][list]]]]]]
+  [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode "myColor2"] [list 'toField "emissiveColor"] [list 'toNode "myMaterial2"]][list]]
 
-  [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode "myColor"] [list 'toField "emissiveColor"] [list 'toNode "myMaterial2"]][list]]
-  
-]] 
+  [x3d:ColorInterpolator [list [list 'DEF "myColor3"] [list 'key "0.0 0.333 0.666 1.0"] [list 'keyValue "1 0 0 0 1 0 0 0 1 1 0 0"]] [list]]
+  [x3d:ROUTE [list [list 'fromField "fraction_changed"] [list 'fromNode "myClock"] [list 'toField "set_fraction"] [list 'toNode "myColor3"]] [list]]
+  [x3d:Material [list [list 'DEF "myMaterial3"] [list 'emissiveColor "0.5,0.5,0.5"]] [list]]
+  [x3d:Shape [list] [list 
+    [x3d:Appearance [list][list [x3d:Material [list [list 'USE "myMaterial3"]][list]]]]
+    [x3d:IndexedLineSet [list [list 'coordIndex " 0 6 -1 1 7 -1 2 4 -1 3 5 -1"]] 
+      [list [x3d:Coordinate [list [list 'USE "mycoordinatss"]][list]]]]]]
+  [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode "myColor3"] [list 'toField "emissiveColor"] [list 'toNode "myMaterial3"]][list]]
+
+  [x3d:Shape [list [list 'DEF "myshhape"] [list 'onclick "handleSingleClick(this)"] [list 'ispickable "true"]]
+             [list [x3d:Appearance [list][list [x3d:Material [list [list 'USE "myMaterial2"]][list]]]]
+                   [x3d:Sphere [list [list 'radius "0.9"]][list]]]]
+  ]
+] 
 
 
 
@@ -144,9 +166,9 @@
     [srl:sxml->xml  [list [mk-x3d scene-list]] out-file]
     [close-output-port out-file]]]
 
-[define [write-x3d-html name x3dom-js x3dom-css scene-list]                                            
+[define [write-x3d-html name x3dom-js x3dom-css jq-js c-js body-list]                                            
   [let [[out-file [open-output-file [string-append name ".html"] #:exists 'replace]]]
-    [write-html [mk-html [list [list 'xmlns "http://www.w3.org/1999/xhtml"]] [mk-x3dom-head name x3dom-js x3dom-css] [list [mk-x3d scene-list]]] out-file]
+    [write-html [mk-xhtml [mk-x3dom-head name x3dom-js x3dom-css jq-js c-js] body-list] out-file]
     [close-output-port out-file]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
