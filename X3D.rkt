@@ -203,3 +203,20 @@
 [define [test-x3d name x3dom-js x3dom-css jq-js x3d-list]
   [write-x3d-html name x3dom-js x3dom-css jq-js c-js [list [mk-x3d x3d-list] info-block] ]]
 
+
+[define coord-vec [apply vector [map str<-vec [map list->vector [shuffle [all-comb 3 [list -1 1]]]]]]]
+
+[define test-edge-list
+  [let [[z [shuffle [uni-comb 2 [list 0 1 2 3 4 5 6 7]]]]]
+    [for/list [[i [in-range 0 12]]]
+      [let [[cl [take [shuffle [all-comb 3 [list 0 1]]] 3]]]
+        [list [list-ref z i] [apply cat [map str<-vec [map list->vector [cons [list-ref cl 2] cl]]]]]]]]]
+
+[define test-shape-list
+  [for/list [[i [in-range 0 8]]]
+    [let [[cl [take [shuffle [all-comb 3 [list 0 1]]] 3]]]
+      [list [add1 i]
+            [str<-vec [vector-map [curry * 6] [vector-map [lambda [x][+ [random] [ - 0.5]]] [make-vector 3 0]]]]
+            [apply cat [map str<-vec [map list->vector [cons [list-ref cl 2] cl]]]]]]]]
+
+[define x3d-test-list [mk-x3d-test "0.0 0.333 0.666 1.0" test-edge-list test-shape-list coord-vec]]
