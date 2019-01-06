@@ -109,7 +109,7 @@
         [x3d:Coordinate [list [list 'point l]] [list]] ]] ]] ]] ]
 
 [define [lines i p c]
-  [x3d:Transform [list [list 'translation "4.5 0 0"]] [list
+  [x3d:Transform [list] [list
     [x3d:Shape [list] [list 
        [x3d:IndexedLineSet 
          [list [list 'colorPerVertex "false"] 
