@@ -114,9 +114,10 @@ A variety of useful functions.
   [let [[s [number->string n r]]]
     [cat [make-string [+ d [- [string-length s]]] #\0] s ]]]
 
-[define [str-pad s d [c #\0]]
+[define [str-lpad s d [c #\0]]
   [cat [make-string [+ d [- [string-length s]]] c] s ]]
-    
+[define [str-rpad s d [c #\0]]
+  [cat s [make-string [+ d [- [string-length s]]] c]]]  
 ;returns a counter function that sequentially returns handy padded integers 
 [define [make-seq-counter [start 0] [digits 10] [radix 10]]
   [let [[count start]] 
