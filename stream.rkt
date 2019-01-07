@@ -9,15 +9,6 @@ including some examples taken from the documentation for srfi/41
 
 [provide [all-defined-out]]
 
-;[require math/number-theory]
-;[provide [all-from-out math/number-theory]]
-
-;[require http/request]
-
-;[require http]
-;[require net/uri-codec]
-;[require file/md5]
-
 [require srfi/41]
 
 [provide [all-from-out srfi/41]]
@@ -234,6 +225,32 @@ including some examples taken from the documentation for srfi/41
       [if [equal? #f c]
           [begin [close-input-port p] stream-null]
           [stream-cons c [loop [regexp-match rx p]]]]]]]
+
+;********************************************************************************************
+[define [display-stream x [o [current-output-port]]]
+  [if [stream? x]
+    [begin [displayln "-" o] [stream-for-each [lambda [y] [display-stream y o]] x]]
+    [display x o]]]
+
+[define [stream-repl-do in-p do-re exit-re]
+  [stream-let loop [[r [regexp-match do-re in-p 0]]]
+    [if [list? r]
+      [if [regexp-match exit-re [car r]]
+        [begin  stream-null]
+        [begin  [stream-cons [car r]
+          [loop [regexp-match do-re in-p 0]]]]]
+      stream-null]]]
+
+[define [stream<-repl-cmds cmd arg-list prompt cmd-stream]
+  [let-values [[[in-p out-p pid err-p stat]
+                [apply values [apply process*/ports #f #f [current-output-port] cmd arg-list]]]]
+    [let [[dore [regexp [cat "(" prompt "|[^\n]*\n)"]]]]
+      [file-stream-buffer-mode out-p 'line]
+      [stream-map
+         [lambda [x] [begin [displayln x out-p] [let [[r [stream-repl-do in-p dore prompt]]] r]]]
+         cmd-stream]]]]
+
+
 
 
 ;********************************************************************************************

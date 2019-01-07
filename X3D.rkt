@@ -1,7 +1,15 @@
 #lang racket
-;[require racket/require [path-up "stream.rkt"]]
-[require racket/require [path-up "XML.rkt"]]
-[require racket/require [path-up "HTML.rkt"]]
+;[require racket/require [path-up "main.rkt"]]
+;[require racket/require [path-up "XML.rkt"]]
+;[require racket/require [path-up "HTML.rkt"]]
+[require "common.rkt"]
+[require "stream.rkt"]
+[require "XBRT.rkt"]
+[require "polydex.rkt"]
+[require "time.rkt"]
+[require "XML.rkt"]
+[require "HTML.rkt"]
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;; Provided functions   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -35,6 +43,9 @@
 [define [x3d:Color al el] [cons 'Color [cons [cons '@ al] el]]]
 [define [x3d:IndexedLineSet al el] [cons 'IndexedLineSet [cons [cons '@ al] el]]]
 [define [x3d:IndexedFaceSet al el] [cons 'IndexedFaceSet [cons [cons '@ al] el]]]
+[define [x3d:Text al el] [cons 'Text [cons [cons '@ al] el]]]
+[define [x3d:FontStyle al el] [cons 'FontStyle [cons [cons '@ al] el]]]
+[define [x3d:Billboard al el] [cons 'Billboard [cons [cons '@ al] el]]]
 [define [x3d:Collision al el] [cons 'Collision [cons [cons '@ al] el]]]
 [define [x3d:Scene al el] [cons 'Scene [cons [cons '@ al] el]]]
 [define [x3d:HEAD al el] [cons 'HEAD [cons [cons '@ al] el]]]
@@ -45,6 +56,18 @@
 [define [x3d:TimeSensor al el] [cons 'TimeSensor [cons [cons '@ al] el]]]
 [define [x3d:ROUTE al el] [cons 'ROUTE [cons [cons '@ al] el]]]
 [define [x3d:Background al el] [cons 'Background [cons [cons '@ al] el]]]
+
+[define [x3d:mk-elem elem-name al el] [cons elem-name [cons [cons '@ al] el]]]
+
+[define [billboard p s t c]
+  [x3d:Transform [list [list 'translation p] [list 'scale [cat [number->string s] " " [number->string s] " " [number->string s]]]] [list
+    [x3d:Billboard [list [list 'axisOfRotation "0 0 0"]] [list
+      [x3d:Shape [list] [list
+        [x3d:Text [list [list 'string t]] [list
+          [x3d:FontStyle [list [list 'family "SANS"]] [list]]]]
+        [x3d:Appearance [list] [list
+          [x3d:Material [list [list 'diffuseColor c] [list 'ambientIntensity "0"] [list 'shininess "0"]] [list]]]]
+            ]]]]]]]
 
 [define [app c]            
   [x3d:Appearance [list] [list
@@ -86,7 +109,7 @@
         [x3d:Coordinate [list [list 'point l]] [list]] ]] ]] ]] ]
 
 [define [lines i p c]
-  [x3d:Transform [list [list 'translation "4.5 0 0"]] [list
+  [x3d:Transform [list] [list
     [x3d:Shape [list] [list 
        [x3d:IndexedLineSet 
          [list [list 'colorPerVertex "false"] 
@@ -104,61 +127,6 @@
         [list [x3d:Coordinate [list [list 'point p]][list]] ]] ]] ]] ]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-[define x3d-test-list [list
-  [sphere "0.9" "-0.315570 -2.552557 0.743604"  "1 1 0 "]
-  [points "0.0 -7.0 -1.0 -1.75 -7.0 -0.5 -4.0 -7.0 0.5 -5.0 -6.5 1.5"]
-  [lines "0 1 2 3 0 -1 4 5 6 7 4 -1 0 4 -1 1 5 -1 2 6 -1 3 7 -1"
-         "-1 1 1 1 1 1 1 1 -1 -1 1 -1 -1 -1 1 1 -1 1 1 -1 -1 -1 -1 -1"
-         "1 0.058824 0.117647 0.878431 0.447059 0 1 0.992157 0.141176 0.101961 0.721569 0 0.12549 0 0.901961 0.878431 0 0.843137 0.294118 0 0.341176 1 0.980392 0.992157 1 1 1"]
-  [face "0 1 2 3 -1, 4 7 6 5 -1, 0 4 5 1 -1, 1 5 6 2 -1, 2 6 7 3 -1, 4 0 3 7 -1, "
-        "1.000000 1.000000 -1.000000, 1.000000 -1.000000 -1.000000, -1.000000 -1.000000 -1.000000, -1.000000 1.000000 -1.000000, 1.000000 0.999999 1.000000, 0.999999 -1.000001 1.000000, -1.000000 -1.000000 1.000000, -1.000000 1.000000 1.000000, "
-        " 0.10 0.10 0.50"]]]
-
-[define  x3d-test-list2 [list
-
-  [x3d:Background [list [list 'skyColor "0 0 0"]][list]] 
-
-  [x3d:TimeSensor [list [list 'DEF "myClock"] [list 'cycleInterval "5.0"] [list 'loop "true"] [list 'enabled "true"] [list 'first "true"]] [list]]
-  [x3d:Coordinate [list [list 'DEF "mycoordinatss"] [list 'point "-3 -2 2   3 -2 2   3 2 2   -3 2 2   3 2 -2   -3 2 -2   -3 -2 -2   3 -2 -2"]] [list]]
-
-  
-  [x3d:ColorInterpolator [list [list 'DEF "myColor1"] [list 'key "0.0 0.333 0.666 1.0"] [list 'keyValue "0 1 1 1 0 1 1 1 0 0 1 1"]] [list]]
-  [x3d:ROUTE [list [list 'fromField "fraction_changed"] [list 'fromNode "myClock"] [list 'toField "set_fraction"] [list 'toNode "myColor1"]] [list]]
-  [x3d:Material [list [list 'DEF "myMaterial1"] [list 'emissiveColor "0.5,0.5,0.5"]] [list]]
-  [x3d:Shape [list] [list 
-    [x3d:Appearance [list][list [x3d:Material [list [list 'USE "myMaterial1"]][list]]]]
-    [x3d:IndexedLineSet [list [list 'coordIndex "0 1 -1 1 2 -1 2 3 -1 3 0 -1 "]] 
-      [list [x3d:Coordinate [list [list 'USE "mycoordinatss"]][list]]]]]]
-  [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode "myColor1"] [list 'toField "emissiveColor"] [list 'toNode "myMaterial1"]][list]]
-
-  [x3d:ColorInterpolator [list [list 'DEF "myColor2"] [list 'key "0.0 0.333 0.666 1.0"] [list 'keyValue " 1 0 1 1 1 0 0 1 1 1 0 1 "]] [list]]
-  [x3d:ROUTE [list [list 'fromField "fraction_changed"] [list 'fromNode "myClock"] [list 'toField "set_fraction"] [list 'toNode "myColor2"]] [list]]
-  [x3d:Material [list [list 'DEF "myMaterial2"] [list 'emissiveColor "0.5,0.5,0.5"]] [list]]
-  [x3d:Shape [list] [list 
-    [x3d:Appearance [list][list [x3d:Material [list [list 'USE "myMaterial2"]][list]]]]
-    [x3d:IndexedLineSet [list [list 'coordIndex " 4 5 -1 5 6 -1 6 7 -1 7 4 -1 "]] 
-      [list [x3d:Coordinate [list [list 'USE "mycoordinatss"]][list]]]]]]
-  [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode "myColor2"] [list 'toField "emissiveColor"] [list 'toNode "myMaterial2"]][list]]
-
-  [x3d:ColorInterpolator [list [list 'DEF "myColor3"] [list 'key "0.0 0.333 0.666 1.0"] [list 'keyValue "1 0 0 0 1 0 0 0 1 1 0 0"]] [list]]
-  [x3d:ROUTE [list [list 'fromField "fraction_changed"] [list 'fromNode "myClock"] [list 'toField "set_fraction"] [list 'toNode "myColor3"]] [list]]
-  [x3d:Material [list [list 'DEF "myMaterial3"] [list 'emissiveColor "0.5,0.5,0.5"]] [list]]
-  [x3d:Shape [list] [list 
-    [x3d:Appearance [list][list [x3d:Material [list [list 'USE "myMaterial3"]][list]]]]
-    [x3d:IndexedLineSet [list [list 'coordIndex " 0 6 -1 1 7 -1 2 4 -1 3 5 -1"]] 
-      [list [x3d:Coordinate [list [list 'USE "mycoordinatss"]][list]]]]]]
-  [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode "myColor3"] [list 'toField "emissiveColor"] [list 'toNode "myMaterial3"]][list]]
-
-  [x3d:Shape [list [list 'DEF "myshhape"] [list 'onclick "handleSingleClick(this)"] [list 'ispickable "true"]]
-             [list [x3d:Appearance [list][list [x3d:Material [list [list 'USE "myMaterial2"]][list]]]]
-                   [x3d:Sphere [list [list 'radius "0.9"]][list]]]]
-  ]
-] 
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [write-x3d name scene-list]                                            
@@ -173,4 +141,82 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+[define c-js [cat 
+"function handleEvent(shape, event) \n"
+"  { $('#lastObject').html($(shape).attr(\"def\")); } \n"
+"  $(document).ready(function(){ \n"
+"    $(\"shape\").each(function() { \n"
+"      $(this).attr(\"onmouseover\", \"handleEvent(this)\"); }); }); \n"
+]]
 
+
+
+[define [mk-coord-node name points-val]
+  [x3d:Coordinate [list [list 'DEF name] [list 'point points-val]] [list]]]
+
+[define [mk-edge-block clock-name i-list tk kv cv]
+  [let* [[edge-tag [cat [pad [car i-list] 5] [pad [cadr i-list] 5]]]
+         [CIname [cat "CIn-" edge-tag]]
+         [Mname [cat "Mn-" edge-tag]]
+         [ESname [cat "En-" edge-tag]]]
+    [list
+  [x3d:ColorInterpolator [list [list 'DEF CIname] [list 'key tk] [list 'keyValue kv]] [list]]
+  [x3d:ROUTE [list [list 'fromField "fraction_changed"] [list 'fromNode clock-name] [list 'toField "set_fraction"] [list 'toNode CIname]] [list]]
+  [x3d:Shape [list [list 'DEF ESname]] [list 
+    [x3d:Appearance [list][list [x3d:Material [list [list 'DEF Mname] ] [list]]]]
+    [x3d:IndexedLineSet [list [list 'coordIndex [cat "0 1 -1"]]] 
+      [list [x3d:Coordinate [list [list 'point [apply cat [map [lambda [z] [vector-ref cv z]] i-list]]]][list]]]]]]
+  [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode CIname] [list 'toField "emissiveColor"] [list 'toNode Mname]][list]]
+]]]
+
+[define [mk-shape-block clock-name id cent-coord rad tv kv]
+  [let* [[tag [pad id 5]]
+         [shape-name [cat "shape-" tag]]
+         [mat-name [cat "mat-" tag]]
+         [CIname [cat "CIn-" tag]]]
+     [list
+       [x3d:ColorInterpolator [list [list 'DEF CIname] [list 'key tv] [list 'keyValue kv]] [list]]
+       [x3d:ROUTE [list [list 'fromField "fraction_changed"] [list 'fromNode clock-name] [list 'toField "set_fraction"] [list 'toNode CIname]] [list]]
+       [x3d:Transform [list [list 'translation cent-coord]]
+         [list [x3d:Shape [list [list 'DEF shape-name] [list 'onmouseover "handleEvent(this, onmouseover)"] [list 'ispickable "true"]]
+           [list [x3d:Appearance [list][list [x3d:Material [list [list 'DEF mat-name] ] [list]]]]
+                 [x3d:Sphere [list [list 'radius rad]][list]]]]]]
+       [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode CIname] [list 'toField "emissiveColor"] [list 'toNode mat-name]][list]]
+     ]]]
+
+
+[define [mk-x3d-test tk e-list s-list cv]
+  [let [[clock-name "clock-0000"]]
+    [append [list
+              [x3d:Background [list [list 'skyColor "0 0 0"]][list]] 
+              [x3d:TimeSensor [list [list 'DEF clock-name] [list 'cycleInterval "5.0"] [list 'loop "true"] [list 'enabled "true"] [list 'first "true"]] [list]]
+              ;[mk-coord-node coord-name coord-str]
+              ]
+            [map [lambda [z] [mk-edge-block clock-name [car z] tk [cadr z] cv]] e-list]
+            [map [lambda [z] [mk-shape-block clock-name [car z] [cadr z] "0.1" tk [caddr z]]] s-list]
+            [list [billboard "0.0 0.0 0.0" 0.3 "testing x3d" "0.50 0.75 0.50"]]
+            ]]]
+
+[define info-block [html:div [list][list [html:h3 [list][list "Last object:"]][html:span [list [list 'id "lastObject"]][list ""]]]]]
+
+
+[define [test-x3d name x3dom-js x3dom-css jq-js x3d-list]
+  [write-x3d-html name x3dom-js x3dom-css jq-js c-js [list [mk-x3d x3d-list] info-block] ]]
+
+
+[define coord-vec [apply vector [map str<-vec [map list->vector [shuffle [all-comb 3 [list -1 1]]]]]]]
+
+[define test-edge-list
+  [let [[z [shuffle [uni-comb 2 [list 0 1 2 3 4 5 6 7]]]]]
+    [for/list [[i [in-range 0 12]]]
+      [let [[cl [take [shuffle [all-comb 3 [list 0 1]]] 3]]]
+        [list [list-ref z i] [apply cat [map str<-vec [map list->vector [cons [list-ref cl 2] cl]]]]]]]]]
+
+[define test-shape-list
+  [for/list [[i [in-range 0 8]]]
+    [let [[cl [take [shuffle [all-comb 3 [list 0 1]]] 3]]]
+      [list [add1 i]
+            [str<-vec [vector-map [curry * 6] [vector-map [lambda [x][+ [random] [ - 0.5]]] [make-vector 3 0]]]]
+            [apply cat [map str<-vec [map list->vector [cons [list-ref cl 2] cl]]]]]]]]
+
+[define x3d-test-list [mk-x3d-test "0.0 0.333 0.666 1.0" test-edge-list test-shape-list coord-vec]]
