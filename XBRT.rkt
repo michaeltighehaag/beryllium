@@ -57,6 +57,10 @@ A functional eXtensible Binary Radix Tree implementation.
 [struct xval extv [count node-height key-height] #:transparent]
 [struct xacc xval [tcount ] #:transparent]
 
+[struct xgen extv [stats accum] #:transparent]
+[struct statrec [ncount vcount node-height key-height] #:transparent]
+
+
 [define xf-def [lambda [va l r x]
   [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
     [extv v]]]]
@@ -79,6 +83,7 @@ A functional eXtensible Binary Radix Tree implementation.
     [extv v]]]]
 
 
+
 [define [xf-statv v l r]
   [if [null? l]
     [if [null? r]
@@ -94,6 +99,9 @@ A functional eXtensible Binary Radix Tree implementation.
               [+ 1 [max [xval-node-height [xbrt-ext l]][xval-node-height [xbrt-ext r]]]]
               [max [+ [gbk-length [xbrt-key l]][xval-key-height [xbrt-ext l]]]
                    [+ [gbk-length [xbrt-key r]][xval-key-height [xbrt-ext r]]]]]]]]
+
+
+
 
 [define xf-stat [lambda [va l r x]
   [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
@@ -114,6 +122,32 @@ A functional eXtensible Binary Radix Tree implementation.
         [xacc v c n k [+ lacc [xacc-tcount [xbrt-ext l]]]]
         [xacc v c n k [+ lacc [xacc-tcount [xbrt-ext l]][xacc-tcount [xbrt-ext r]]]]]]]]]]]
 
+
+[define [val-def va x] va]
+[define [val-file-dump va x]
+               [if [null? x]
+                 [let [[o [open-output-file [car va] #:exists 'replace]]]
+                   [displayln [cdr va] o] [cons o [cdr va]]]
+                 [begin [displayln [cdr va] [car [extv-val x]]] [cons [extv-val x][cdr va]]]]]
+
+[define [xgen-def-stat v l r]
+  [let [[ls [if [null? l] [statrec 0 0 0 0] [xgen-stats [xbrt-ext l]]]]
+        [rs [if [null? r] [statrec 0 0 0 0] [xgen-stats [xbrt-ext r]]]]]
+      [values [+ [inz v] [statrec-ncount ls][statrec-ncount rs]]
+              [+ [inz v] [statrec-vcount ls][statrec-vcount rs]]
+              [+ 1 [max [statrec-node-height ls][statrec-node-height rs]]]
+              [max [+ [gbk-length [xbrt-key l]][statrec-key-height ls]]
+                   [+ [gbk-length [xbrt-key r]][statrec-key-height rs]]]]]]
+
+[define [xgen-def-accum v l r] 0]
+
+[define xgen-def  [lambda [va l r x]
+  [let [[v [if [null? va]
+             [if [null? x] null [extv-val x]]
+             [if [equal? va [void]] null [val-def va x]]]]]
+    [let [[s [xgen-def-stat v l r]]
+          [a [xgen-def-accum v l r]]]
+      [xgen v s a]]]]]
   
 [define [mk-root f] [xbrt [rbk<-bin-char-str ""] [f null null null null] null null]] 
 
