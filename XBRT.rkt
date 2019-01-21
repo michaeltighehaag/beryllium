@@ -8,7 +8,7 @@ A functional eXtensible Binary Radix Tree implementation.
 [require racket/require
   [path-up "stream.rkt"]]
 [require bitsyntax]
-[require racket/performance-hint]
+
 
 [provide [all-defined-out]]
 
@@ -17,13 +17,10 @@ A functional eXtensible Binary Radix Tree implementation.
 
 [struct rbk [bits frst last] #:transparent]
 
-
-
 [define [gbk-length k] [+ [rbk-last k] [- [rbk-frst k]]]]
 [define [gbk-ref k n] [bit-string-ref [rbk-bits k] [+ [rbk-frst k] n]]]
 [define [gbk-cat lb rb] [rbk [rbk-bits rb] [rbk-frst lb] [rbk-last rb]]]
-  ;[bit-string-pack [bit-string-append lb rb]]]
-[define [bin-char-str<-gbk k] 
+[define [bin-char-str<-gbk k]
   [let [[l [gbk-length k]]]
     [if [equal? l 0] ""
       [pad [bit-string->unsigned-integer [sub-bit-string [rbk-bits k] [rbk-frst k][rbk-last k]] #t] l 2]]]]
@@ -36,7 +33,7 @@ A functional eXtensible Binary Radix Tree implementation.
 
 [define [rbk<-bits b][rbk b 0 [bit-string-length b]]]
 [define [rbk<-int v s] [rbk [integer->bit-string v s #t] 0 s]]
-[define [rbk<-string str] 
+[define [rbk<-string str]
   [let* [[bs [string->bytes/utf-8 str]]
          [bits [bit-string [bs :: binary]]]]
     [rbk bits 0 [bit-string-length bits]]]]
@@ -44,22 +41,15 @@ A functional eXtensible Binary Radix Tree implementation.
   [let [[sl [string-length s]]]
     [rbk<-int [if [equal? sl 0] 0 [string->number s 2]] sl]]]
 
-
-;[define [xbrt-ek? n][equal? [gbk-length [xbrt-key n]] 0]]
 [define [xbrt-kfb? n][gbk-ref [xbrt-key n] 0]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [struct xbrt [key ext left right] #:transparent]
-;[struct extv [val] #:transparent]
+
+
 [struct extv [val] #:transparent]
-[struct xval extv [count node-height key-height] #:transparent]
-[struct xacc xval [tcount ] #:transparent]
-
-[struct xgen extv [stats accum] #:transparent]
-[struct statrec [ncount vcount node-height key-height] #:transparent]
-
 
 [define xf-def [lambda [va l r x]
   [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
@@ -68,14 +58,14 @@ A functional eXtensible Binary Radix Tree implementation.
 [define xf-dac [lambda [va l r x]
   [let [[v [if [null? va]
            [if [null? x] null [extv-val x]]
-           [if [equal? va [void]] null 
+           [if [equal? va [void]] null
              [if [null? x] [list va] [cons va [extv-val x]] ]]]]]
     [extv v]]]]
 
 [define xf-acf [lambda [va l r x]
   [let [[v [if [null? va]
            [if [null? x] null [extv-val x]]
-           [if [equal? va [void]] null 
+           [if [equal? va [void]] null
              [if [null? x]
                  [let [[o [open-output-file [car va] #:exists 'replace]]]
                    [displayln [cdr va] o] o]
@@ -83,6 +73,8 @@ A functional eXtensible Binary Radix Tree implementation.
     [extv v]]]]
 
 
+
+[struct xval extv [count node-height key-height] #:transparent]
 
 [define [xf-statv v l r]
   [if [null? l]
@@ -100,12 +92,12 @@ A functional eXtensible Binary Radix Tree implementation.
               [max [+ [gbk-length [xbrt-key l]][xval-key-height [xbrt-ext l]]]
                    [+ [gbk-length [xbrt-key r]][xval-key-height [xbrt-ext r]]]]]]]]
 
-
-
-
 [define xf-stat [lambda [va l r x]
   [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
     [call-with-values [lambda [] [xf-statv v l r]] [lambda [v c n k] [xval v c n k]]]]]]
+
+
+[struct xacc xval [tcount] #:transparent]
 
 [define xf-acc [lambda [va l r x]
 [let [[v [if [null? va]
@@ -122,34 +114,47 @@ A functional eXtensible Binary Radix Tree implementation.
         [xacc v c n k [+ lacc [xacc-tcount [xbrt-ext l]]]]
         [xacc v c n k [+ lacc [xacc-tcount [xbrt-ext l]][xacc-tcount [xbrt-ext r]]]]]]]]]]]
 
+;;;*****
+
+[struct xgen extv [stats accum] #:transparent]
 
 [define [val-def va x] va]
+
 [define [val-file-dump va x]
                [if [null? x]
                  [let [[o [open-output-file [car va] #:exists 'replace]]]
                    [displayln [cdr va] o] [cons o [cdr va]]]
                  [begin [displayln [cdr va] [car [extv-val x]]] [cons [extv-val x][cdr va]]]]]
 
+[struct statrec [ncount vcount node-height key-height] #:transparent]
 [define [xgen-def-stat v l r]
   [let [[ls [if [null? l] [statrec 0 0 0 0] [xgen-stats [xbrt-ext l]]]]
-        [rs [if [null? r] [statrec 0 0 0 0] [xgen-stats [xbrt-ext r]]]]]
-      [values [+ [inz v] [statrec-ncount ls][statrec-ncount rs]]
+        [rs [if [null? r] [statrec 0 0 0 0] [xgen-stats [xbrt-ext r]]]]
+        [lkl [if [null? l] 0 [gbk-length [xbrt-key l]]]]
+        [rkl [if [null? r] 0 [gbk-length [xbrt-key r]]]]]
+      [statrec [+ 1 [statrec-ncount ls][statrec-ncount rs]]
               [+ [inz v] [statrec-vcount ls][statrec-vcount rs]]
               [+ 1 [max [statrec-node-height ls][statrec-node-height rs]]]
-              [max [+ [gbk-length [xbrt-key l]][statrec-key-height ls]]
-                   [+ [gbk-length [xbrt-key r]][statrec-key-height rs]]]]]]
+              [max [+ lkl [statrec-key-height ls]]
+                   [+ rkl [statrec-key-height rs]]]]]]
 
 [define [xgen-def-accum v l r] 0]
 
-[define xgen-def  [lambda [va l r x]
-  [let [[v [if [null? va]
-             [if [null? x] null [extv-val x]]
-             [if [equal? va [void]] null [val-def va x]]]]]
-    [let [[s [xgen-def-stat v l r]]
-          [a [xgen-def-accum v l r]]]
-      [xgen v s a]]]]]
-  
-[define [mk-root f] [xbrt [rbk<-bin-char-str ""] [f null null null null] null null]] 
+[define [mk-xgenf vf sf af]
+  [lambda [va l r x]
+    [let [[v [if [null? va]
+               [if [null? x] null [extv-val x]]
+               [if [equal? va [void]] null [vf va x]]]]]
+      [let [[s [sf v l r]]
+            [a [af v l r]]]
+        [xgen v s a]]]]]
+
+[define xgen-def [mk-xgenf val-def xgen-def-stat xgen-def-accum]]
+
+;;;*****
+
+[define [mk-root f] [xbrt [rbk<-bin-char-str ""] [f null null null null] null null]]
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -158,7 +163,7 @@ A functional eXtensible Binary Radix Tree implementation.
 [define [qk-rec k kl ki hb hl hr np]
   [let* [[hmi [gbk-fd k ki hb 0]]
          [nki [+ ki hmi]]
-         [hbl [gbk-length hb]]] 
+         [hbl [gbk-length hb]]]
     [if [< hmi hbl]
       [values nki kl hmi hbl np]
       [if [< nki kl]
@@ -177,16 +182,16 @@ A functional eXtensible Binary Radix Tree implementation.
            [hb [xbrt-key h]][hext [xbrt-ext h]][hl [xbrt-left h]][hr [xbrt-right h]]]
       [rec-up-bp
         [if [equal? [gbk-ref [xbrt-key node] 0] 0]
-          [xbrt hb [xf null node hr hext] node hr] 
+          [xbrt hb [xf null node hr hext] node hr]
           [xbrt hb [xf null hl node hext] hl node]]
         [cdr nbp] xf]
       ]]]
 
-[define [xset t k v [xf xf-def]] 
+[define [xset t k v [xf xf-def]]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [let [[h [car np]]]
       [let [[b [xbrt-key h]][x [xbrt-ext h]][l [xbrt-left h]][r [xbrt-right h]]]
-          [if [equal? nki kl]  
+          [if [equal? nki kl] 
             [if [equal? hmi hbl]
               [let [[node [xbrt b [xf v l r x] l r]]]
                 [rec-up-bp node [cdr np] xf]]
@@ -212,20 +217,20 @@ A functional eXtensible Binary Radix Tree implementation.
                  ;   [let [[node [xbrt [gbk-sub-key b 0 hmi] [xf null nh nn null] nh nn]]]
                     [let [[node [xbrt [gbk-sub-key k [- nki hmi] nki] [xf null nh nn null] nh nn]]]
                       [rec-up-bp node [cdr np] xf]]] ]] ] ]]]]
-      
-[define [xget t k] 
+     
+[define [xget t k]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [if [null? np] null
       [let [[n [car np]]]
         [if [equal? hmi [gbk-length [xbrt-key n]]] [xbrt-ext n] null]]]]]
 
-[define [xgetv t k] 
+[define [xgetv t k]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [if [null? np] null
       [let [[n [car np]]]
         [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]] [extv-val [xbrt-ext n]] null]]]]]
 
-  
+ 
 [define [rec-mend-bp b x l r nbp xf]
   [if [equal? [gbk-length b] 0] [let [[node [xbrt b [xf null l r x] l r]]] node]
     [let* [[h [car nbp]]
@@ -256,7 +261,7 @@ A functional eXtensible Binary Radix Tree implementation.
         [if [< nki kl] t
           [if [< hmi hbl] t
             [rec-mend-bp b [xf [void] l r x] l r [cdr np] xf]]]]]]]
-              
+             
 
 ;[define [nset t k n [xf null]] [void]];[values t xv] this really just merge.
 
@@ -264,7 +269,7 @@ A functional eXtensible Binary Radix Tree implementation.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[define [fct-first t cf pxf] 
+[define [fct-first t cf pxf]
   [if [cf t null]
     [values 0 null]
     [values 1 [list [cons t [pxf t null]]]]]]
@@ -286,7 +291,7 @@ A functional eXtensible Binary Radix Tree implementation.
           [values 2 [cdr bp]]
           [values 3 [cdr bp]]]]]]]
 
-[define [fct-last t cf pxf] 
+[define [fct-last t cf pxf]
   [if [cf t null]
     [values 0 null]
     [values 3 [list [cons t [pxf t null]]]]]]
@@ -315,16 +320,16 @@ A functional eXtensible Binary Radix Tree implementation.
  [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]]
 
 
-[define [cf-tst n bp] [< 4 [+ [gbk-length [xbrt-key n]] [inz bp [lambda [n] [gbk-length [cdar n]]]]]]]
+[define [cf-tst n bp] [< 5 [+ [gbk-length [xbrt-key n]] [inz bp [lambda [n] [gbk-length [cdar n]]]]]]]
 [define [op-tst s bp]
-  [if [and [equal? s 2] [equal? 4 [gbk-length [cdar bp]]]]
+  [if [and [equal? s 2] [equal? 5 [gbk-length [cdar bp]]]]
     [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]
     [void]]]
 
 [define [op-pre s bp] [if [equal? s 1] [extv-val [xbrt-ext [caar bp]]][void]]]
 
 [define [strm-fct t cf pxf op]
-  [stream-filter [lambda [x] [not [void? x]]] 
+  [stream-filter [lambda [x] [not [void? x]]]
     [stream-unfold
       [lambda [x] [op [car x][cdr x]]]
       [lambda [x] [< 0 [car x]]]
@@ -332,7 +337,7 @@ A functional eXtensible Binary Radix Tree implementation.
       [call-with-values [lambda [] [fct-first t cf pxf]] cons]]]]
 
 
-[define [preorder-init t cf pxf] 
+[define [preorder-init t cf pxf]
   [let-values [[[s bp] [fct-first t cf pxf]]]
     [if [null? [extv-val [xbrt-ext [caar bp]]]]
       [preorder-iter s bp cf pxf]
@@ -350,7 +355,7 @@ A functional eXtensible Binary Radix Tree implementation.
     [lambda [x] [call-with-values [lambda [] [preorder-iter [car x] [cdr x] cf-def pxf-def]] cons]]
     [call-with-values [lambda [] [preorder-init t cf-def pxf-def]] cons]]]
 
-[define [fmode-init m t cf pxf] 
+[define [fmode-init m t cf pxf]
   [let-values [[[s bp] [fct-first t cf pxf]]]
     [if [null? [extv-val [xbrt-ext [caar bp]]]]
       [fmode-iter m s bp cf pxf]
@@ -372,30 +377,20 @@ A functional eXtensible Binary Radix Tree implementation.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [xbrt=? x y]
-  [let [[nx [if [null? x] [mk-root xf-def] x]][ny [if [null? y] [mk-root xf-def] y]]]
-  [and [bit-string-equal? [bit-string-pack [xbrt-key nx]] [bit-string-pack [xbrt-key ny]]]
-       [equal? [xbrt-ext nx] [xbrt-ext ny]]
-       [xbrt=? [xbrt-left nx] [xbrt-left ny]]
-       [xbrt=? [xbrt-right nx] [xbrt-right ny]]]]]
+  [let [[nx [if [null? x] [mk-root xf-def] x]]
+        [ny [if [null? y] [mk-root xf-def] y]]]
+    [and [bit-string-equal? [bit-string-pack [xbrt-key nx]] [bit-string-pack [xbrt-key ny]]]
+         [equal? [xbrt-ext nx] [xbrt-ext ny]]
+         [xbrt=? [xbrt-left nx] [xbrt-left ny]]
+         [xbrt=? [xbrt-right nx] [xbrt-right ny]]]]]
 
 [define [nmk-rbs min max]
   [substring [apply string-append [for/list [[k [in-range 0 [add1 [quotient max 16]]]]]
-    [pad [random [expt 2 16]] 16 2]]] min [+ min [random [- max min]]]]]
-
-[define [mk-inorder-str n d]
-  [if [equal? 0 [modulo n 2]]
-    [mk-inorder-str [/ n 2] [sub1 d]]
-    [bin-char-str<-gbk [rbk<-int [/ [sub1 n] 2] [sub1 d]]]]] 
-
-[define [mk-bkey-inorder<? max-kl]
-  [lambda [x y]
-    [string<? [string-append x "1" [make-string [- [sub1 max-kl] [string-length x]] #\0]]
-              [string-append y "1" [make-string [- [sub1 max-kl] [string-length y]] #\0]]]]]
-
+    [pad [random [expt 2 16]] 16 2]]] min [+ min [random [- [add1 max] min]]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[define-inline [unit-test n r]
+[define [unit-test n r]
   [let* [[kl [for/list [[j [in-range 0 [expt 2 n]]]] [nmk-rbs 0 r]]]
          [ckl [remove-duplicates kl]]
          [rkl [sort ckl [lambda [x y] [< 0.5 [random]]]]]
@@ -403,11 +398,11 @@ A functional eXtensible Binary Radix Tree implementation.
          [drkl [cdr rkl]]
          [skl [sort rkl string<?]]
          [dskl [sort drkl string<?]]
-         ]    
+         ]   
     [display "made keylist of length: "] [displayln [length rkl]]
     [display "tree build timing: "]
-    [let* [[t [time [rec-set [mk-root xf-stat] rkl xf-stat]]]
-          [dt [xdel t  [rbk<-bin-char-str re] xf-stat]]]
+    [let* [[t [time [rec-set [mk-root xgen-def] rkl xgen-def]]]
+          [dt [xdel t  [rbk<-bin-char-str re] xgen-def]]]
       [let [[res [stream->list [stream-map car [strm-preorder t]]]]
             [dres [stream->list [stream-map car [strm-preorder dt]]]]]
       [if [equal? res skl]  [displayln "passed xset test!"]
@@ -416,14 +411,16 @@ A functional eXtensible Binary Radix Tree implementation.
                               [displayln "FAILED xdel test!"]]
       [list t rkl]]]]]
 
-[define [test]
-    [let [[mt [unit-test 8 64]]]
-      [displayln "fct strm def:"]    
-      [disp-stream [strm-fct [car mt] cf-def pxf-def op-def]]
-      [disp-stream [strm-preorder [car mt]]]
+[define [xbrt-test]
+    [let [[mt [unit-test 12 64]]]
+      ;[displayln "fct strm def:"]   
+      ;[disp-stream [strm-fct [car mt] cf-def pxf-def op-def]]
+      ;[disp-stream [strm-preorder [car mt]]]
       [displayln "fct strm tst:"]
       [disp-stream [strm-fct [car mt] cf-tst pxf-def op-tst]]
       [car mt]]]
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -60,6 +60,12 @@ including some examples taken from the documentation for srfi/41
     [begin [displayln "-" o] [stream-for-each [lambda [y] [disp-stream y o]] x]]
     [displayln x o]]]
 
+[define [display-stream x [o [current-output-port]]]
+  [if [stream? x]
+    [begin [displayln "-" o] [stream-for-each [lambda [y] [display-stream y o]] x]]
+    [display x o]]]
+
+
 [define-stream [stream-chunk n strm]
   [if [stream-null? strm]
     stream-null
@@ -227,10 +233,6 @@ including some examples taken from the documentation for srfi/41
           [stream-cons c [loop [regexp-match rx p]]]]]]]
 
 ;********************************************************************************************
-[define [display-stream x [o [current-output-port]]]
-  [if [stream? x]
-    [begin [displayln "-" o] [stream-for-each [lambda [y] [display-stream y o]] x]]
-    [display x o]]]
 
 [define [stream-repl-do in-p do-re exit-re]
   [stream-let loop [[r [regexp-match do-re in-p 0]]]
@@ -244,10 +246,10 @@ including some examples taken from the documentation for srfi/41
 [define [stream<-repl-cmds cmd arg-list prompt cmd-stream]
   [let-values [[[in-p out-p pid err-p stat]
                 [apply values [apply process*/ports #f #f [current-output-port] cmd arg-list]]]]
-    [let [[dore [regexp [cat "(" prompt "|[^\n]*\n)"]]]]
+    [let [[dore [regexp [cat "(" prompt "|[^\n]*)\n"]]]]
       [file-stream-buffer-mode out-p 'line]
-      [stream-map
-         [lambda [x] [begin [displayln x out-p] [let [[r [stream-repl-do in-p dore prompt]]] r]]]
+      [stream-for-each
+         [lambda [x] [begin [displayln x out-p] [let [[r [stream-repl-do in-p dore prompt]]] [display-stream r]]]]
          cmd-stream]]]]
 
 
