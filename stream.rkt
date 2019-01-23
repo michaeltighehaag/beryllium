@@ -236,9 +236,9 @@ including some examples taken from the documentation for srfi/41
 
 [define [stream-repl-do in-p do-re exit-re]
   [stream-let loop [[r [regexp-match do-re in-p 0]]]
-    [if [list? r]
+    [if [list? r]          
       [if [regexp-match exit-re [car r]]
-        [begin  stream-null]
+        [begin  [stream-cons [cat "" exit-re] stream-null]]
         [begin  [stream-cons [car r]
           [loop [regexp-match do-re in-p 0]]]]]
       stream-null]]]
@@ -246,13 +246,15 @@ including some examples taken from the documentation for srfi/41
 [define [stream<-repl-cmds cmd arg-list prompt cmd-stream]
   [let-values [[[in-p out-p pid err-p stat]
                 [apply values [apply process*/ports #f #f [current-output-port] cmd arg-list]]]]
-    [let [[dore [regexp [cat "(" prompt "|[^\n]*)\n"]]]]
-      [file-stream-buffer-mode out-p 'line]
+    [file-stream-buffer-mode out-p 'line]
+    [let [[dore [regexp [cat "(" prompt "|[^\n]*\n)"]]]]
+      [let [[r [stream-repl-do in-p dore prompt]]] [display-stream r]]
       [stream-for-each
-         [lambda [x] [begin [displayln x out-p] [let [[r [stream-repl-do in-p dore prompt]]] [display-stream r]]]]
+         [lambda [x] [begin
+           [displayln x out-p]
+           [let [[r [stream-repl-do in-p dore prompt]]]
+             [display-stream r]]]]
          cmd-stream]]]]
-
-
 
 
 ;********************************************************************************************
