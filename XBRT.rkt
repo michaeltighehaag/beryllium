@@ -120,11 +120,16 @@ A functional eXtensible Binary Radix Tree implementation.
 
 [define [val-def va x] va]
 
-[define [val-file-dump va x]
+[define [val-file va x]
                [if [null? x]
                  [let [[o [open-output-file [car va] #:exists 'replace]]]
-                   [displayln [cdr va] o] [cons o [cdr va]]]
-                 [begin [displayln [cdr va] [car [extv-val x]]] [cons [extv-val x][cdr va]]]]]
+                   [displayln [cdr va] o] o]
+                   [begin [displayln [cdr va] [extv-val x]] [extv-val x]]]]
+
+[define [val-sum va x] [if [null? x] va [cons [car va] [+ [cdr va] [cdr [extv-val x]]]]]]
+                   
+              ;     [displayln [cdr va] o] [cons o [cdr va]]]
+              ;   [begin [displayln [cdr va] [car [extv-val x]]] [cons [car [extv-val x]][cdr va]]]]]
 
 [struct statrec [ncount vcount node-height key-height] #:transparent]
 [define [xgen-def-stat v l r]
@@ -150,6 +155,8 @@ A functional eXtensible Binary Radix Tree implementation.
         [xgen v s a]]]]]
 
 [define xgen-def [mk-xgenf val-def xgen-def-stat xgen-def-accum]]
+[define xgen-file [mk-xgenf val-file xgen-def-stat xgen-def-accum]]
+[define xgen-sum [mk-xgenf val-sum xgen-def-stat xgen-def-accum]]
 
 ;;;*****
 
@@ -445,3 +452,9 @@ A functional eXtensible Binary Radix Tree implementation.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ ;  [stream-for-each [lambda [x] [close-output-port [car x]]]
+  [disp-stream
+   [strm-preorder
+[stream-set [lambda [x] [rbk<-string [car x]]] [lambda [x] x] xgen-sum
+            [stream [cons "a123" 3] [cons "b123" 3] [cons "a123" 2]]]]]
