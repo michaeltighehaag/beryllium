@@ -453,8 +453,3 @@ A functional eXtensible Binary Radix Tree implementation.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
- ;  [stream-for-each [lambda [x] [close-output-port [car x]]]
-  [disp-stream
-   [strm-preorder
-[stream-set [lambda [x] [rbk<-string [car x]]] [lambda [x] x] xgen-sum
-            [stream [cons "a123" 3] [cons "b123" 3] [cons "a123" 2]]]]]
