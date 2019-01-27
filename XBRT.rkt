@@ -54,9 +54,7 @@ A functional eXtensible Binary Radix Tree implementation.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[define xf-def [lambda [va l r x]
-  [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
-    [extv v]]]]
+
 
 [define xf-dac [lambda [va l r x]
   [let [[v [if [null? va]
@@ -122,6 +120,10 @@ A functional eXtensible Binary Radix Tree implementation.
 ;;;*****
 
 [struct xgen extv [tree-stats accum] #:transparent]
+
+[define xf-def [lambda [va l r x]
+  [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
+    [extv v]]]]
 
 ;****
 [define [val-def va x] va]
