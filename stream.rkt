@@ -248,7 +248,8 @@ including some examples taken from the documentation for srfi/41
                 [apply values [apply process*/ports #f #f [current-output-port] cmd arg-list]]]]
     [file-stream-buffer-mode out-p 'line]
     [let [[dore [regexp [cat "(" prompt "|[^\n]*\n)"]]]]
-      [let [[r [stream-repl-do in-p dore prompt]]] [display-stream r]]
+      [let [[r [stream-repl-do in-p dore prompt]]]
+        [display-stream r]]
       [stream-for-each
          [lambda [x] [begin
            [displayln x out-p]

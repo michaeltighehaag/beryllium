@@ -116,34 +116,47 @@ A functional eXtensible Binary Radix Tree implementation.
 
 ;;;*****
 
-[struct xgen extv [stats accum] #:transparent]
+[struct xgen extv [tree-stats accum] #:transparent]
 
 [define [val-def va x] va]
 
+[define [mk-val-file-func portf]
+  [lambda [va x]
+    [if [null? x]
+      [let [[o [portf [car va]]]]
+        [displayln [cdr va] o] o]
+        [begin [displayln [cdr va] [extv-val x]] [extv-val x]]]]]
+
+;[define val-file [mk-val-file-func [lambda [x] [open-output-file x #:exists 'replace]]]]
+[define val-file-app [mk-val-file-func [lambda [x] [open-output-file x #:exists 'append]]]]
+
+;;
 [define [val-file va x]
                [if [null? x]
                  [let [[o [open-output-file [car va] #:exists 'replace]]]
                    [displayln [cdr va] o] o]
                    [begin [displayln [cdr va] [extv-val x]] [extv-val x]]]]
+;;
 
+
+[define [mk-val-acc-func accf] [lambda [va x] [if [null? x] va [accf va [extv-val x]]]]]
+;[define val-sum [mk-val-acc-func +]]
 [define [val-sum va x] [if [null? x] va [cons [car va] [+ [cdr va] [cdr [extv-val x]]]]]]
-                   
-              ;     [displayln [cdr va] o] [cons o [cdr va]]]
-              ;   [begin [displayln [cdr va] [car [extv-val x]]] [cons [car [extv-val x]][cdr va]]]]]
 
-[struct statrec [ncount vcount node-height key-height] #:transparent]
+
+[struct tree-stat [ncount vcount node-height key-height] #:transparent]
 [define [xgen-def-stat v l r]
-  [let [[ls [if [null? l] [statrec 0 0 0 0] [xgen-stats [xbrt-ext l]]]]
-        [rs [if [null? r] [statrec 0 0 0 0] [xgen-stats [xbrt-ext r]]]]
+  [let [[ls [if [null? l] [tree-stat 0 0 0 0] [xgen-tree-stats [xbrt-ext l]]]]
+        [rs [if [null? r] [tree-stat 0 0 0 0] [xgen-tree-stats [xbrt-ext r]]]]
         [lkl [if [null? l] 0 [gbk-length [xbrt-key l]]]]
         [rkl [if [null? r] 0 [gbk-length [xbrt-key r]]]]]
-      [statrec [+ 1 [statrec-ncount ls][statrec-ncount rs]]
-              [+ [inz v] [statrec-vcount ls][statrec-vcount rs]]
-              [+ 1 [max [statrec-node-height ls][statrec-node-height rs]]]
-              [max [+ lkl [statrec-key-height ls]]
-                   [+ rkl [statrec-key-height rs]]]]]]
+      [tree-stat [+ 1 [tree-stat-ncount ls][tree-stat-ncount rs]]
+              [+ [inz v] [tree-stat-vcount ls][tree-stat-vcount rs]]
+              [+ 1 [max [tree-stat-node-height ls][tree-stat-node-height rs]]]
+              [max [+ lkl [tree-stat-key-height ls]]
+                   [+ rkl [tree-stat-key-height rs]]]]]]
 
-[define [xgen-def-accum v l r] 0]
+[define [xgen-def-acc v l r] null]
 
 [define [mk-xgenf vf sf af]
   [lambda [va l r x]
@@ -154,9 +167,9 @@ A functional eXtensible Binary Radix Tree implementation.
             [a [af v l r]]]
         [xgen v s a]]]]]
 
-[define xgen-def [mk-xgenf val-def xgen-def-stat xgen-def-accum]]
-[define xgen-file [mk-xgenf val-file xgen-def-stat xgen-def-accum]]
-[define xgen-sum [mk-xgenf val-sum xgen-def-stat xgen-def-accum]]
+[define xgen-def [mk-xgenf val-def xgen-def-stat xgen-def-acc]]
+[define xgen-file [mk-xgenf val-file xgen-def-stat xgen-def-acc]]
+[define xgen-sum [mk-xgenf val-sum xgen-def-stat xgen-def-acc]]
 
 ;;;*****
 
@@ -333,6 +346,8 @@ A functional eXtensible Binary Radix Tree implementation.
     [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]
     [void]]]
 
+
+
 [define [op-pre s bp] [if [equal? s 1] [extv-val [xbrt-ext [caar bp]]][void]]]
 
 [define [strm-fct t cf pxf op]
@@ -420,12 +435,12 @@ A functional eXtensible Binary Radix Tree implementation.
 
 [define [xbrt-test]
     [let [[mt [unit-test 12 64]]]
-      ;[displayln "fct strm def:"]   
-      ;[disp-stream [strm-fct [car mt] cf-def pxf-def op-def]]
-      ;[disp-stream [strm-preorder [car mt]]]
+      [displayln "fct strm def:"]   
+      [disp-stream [stream-take 20 [strm-fct [car mt] cf-def pxf-def op-def]]]
+      [disp-stream [stream-take 20 [strm-preorder [car mt]]]]
       [displayln "fct strm tst:"]
       [disp-stream [strm-fct [car mt] cf-tst pxf-def op-tst]]
-      [car mt]]]
+      [xget [car mt] [rbk<-bin-char-str ""]]]]
 
 
 
