@@ -15,6 +15,7 @@ A functional eXtensible Binary Radix Tree implementation.
 [define [inz n [f [lambda [n] 1]]] [if [null? n] 0 [f n]]]
 
 
+
 [struct rbk [bits frst last] #:transparent]
 
 [define [gbk-length k] [+ [rbk-last k] [- [rbk-frst k]]]]
@@ -48,8 +49,10 @@ A functional eXtensible Binary Radix Tree implementation.
 
 [struct xbrt [key ext left right] #:transparent]
 
-
 [struct extv [val] #:transparent]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define xf-def [lambda [va l r x]
   [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
@@ -114,21 +117,27 @@ A functional eXtensible Binary Radix Tree implementation.
         [xacc v c n k [+ lacc [xacc-tcount [xbrt-ext l]]]]
         [xacc v c n k [+ lacc [xacc-tcount [xbrt-ext l]][xacc-tcount [xbrt-ext r]]]]]]]]]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;*****
 
 [struct xgen extv [tree-stats accum] #:transparent]
 
+;****
 [define [val-def va x] va]
 
-[define [mk-val-file-func portf]
+[define [mk-val-acc-func accf] [lambda [va x] [if [null? x] va [accf va [extv-val x]]]]]
+;[define val-sum [mk-val-acc-func +]]
+[define [val-sum va x] [if [null? x] va [cons [car va] [+ [cdr va] [cdr [extv-val x]]]]]]
+
+[define [mk-val-port-func portf]
   [lambda [va x]
     [if [null? x]
       [let [[o [portf [car va]]]]
         [displayln [cdr va] o] o]
         [begin [displayln [cdr va] [extv-val x]] [extv-val x]]]]]
-
-;[define val-file [mk-val-file-func [lambda [x] [open-output-file x #:exists 'replace]]]]
-[define val-file-app [mk-val-file-func [lambda [x] [open-output-file x #:exists 'append]]]]
+;[define val-file [mk-val-port-func [lambda [x] [open-output-file x #:exists 'replace]]]]
+[define val-file-app [mk-val-port-func [lambda [x] [open-output-file x #:exists 'append]]]]
 
 ;;
 [define [val-file va x]
@@ -139,11 +148,7 @@ A functional eXtensible Binary Radix Tree implementation.
 ;;
 
 
-[define [mk-val-acc-func accf] [lambda [va x] [if [null? x] va [accf va [extv-val x]]]]]
-;[define val-sum [mk-val-acc-func +]]
-[define [val-sum va x] [if [null? x] va [cons [car va] [+ [cdr va] [cdr [extv-val x]]]]]]
-
-
+;****
 [struct tree-stat [ncount vcount node-height key-height] #:transparent]
 [define [xgen-def-stat v l r]
   [let [[ls [if [null? l] [tree-stat 0 0 0 0] [xgen-tree-stats [xbrt-ext l]]]]
@@ -151,13 +156,15 @@ A functional eXtensible Binary Radix Tree implementation.
         [lkl [if [null? l] 0 [gbk-length [xbrt-key l]]]]
         [rkl [if [null? r] 0 [gbk-length [xbrt-key r]]]]]
       [tree-stat [+ 1 [tree-stat-ncount ls][tree-stat-ncount rs]]
-              [+ [inz v] [tree-stat-vcount ls][tree-stat-vcount rs]]
+              [+ [if [null? v] 0 1] [tree-stat-vcount ls][tree-stat-vcount rs]]
               [+ 1 [max [tree-stat-node-height ls][tree-stat-node-height rs]]]
               [max [+ lkl [tree-stat-key-height ls]]
                    [+ rkl [tree-stat-key-height rs]]]]]]
 
-[define [xgen-def-acc v l r] null]
+;****
+[define [xgen-def-acc-func v l r] null]
 
+;****
 [define [mk-xgenf vf sf af]
   [lambda [va l r x]
     [let [[v [if [null? va]
@@ -167,9 +174,9 @@ A functional eXtensible Binary Radix Tree implementation.
             [a [af v l r]]]
         [xgen v s a]]]]]
 
-[define xgen-def [mk-xgenf val-def xgen-def-stat xgen-def-acc]]
-[define xgen-file [mk-xgenf val-file xgen-def-stat xgen-def-acc]]
-[define xgen-sum [mk-xgenf val-sum xgen-def-stat xgen-def-acc]]
+[define xgen-def [mk-xgenf val-def xgen-def-stat xgen-def-acc-func]]
+[define xgen-file [mk-xgenf val-file xgen-def-stat xgen-def-acc-func]]
+[define xgen-sum [mk-xgenf val-sum xgen-def-stat xgen-def-acc-func]]
 
 ;;;*****
 
@@ -340,7 +347,8 @@ A functional eXtensible Binary Radix Tree implementation.
  [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]]
 
 
-[define [cf-tst n bp] [< 5 [+ [gbk-length [xbrt-key n]] [inz bp [lambda [n] [gbk-length [cdar n]]]]]]]
+[define [cf-tst n bp] [< 5 [+ [gbk-length [xbrt-key n]] [if [null? bp] 0 [gbk-length [cdar bp]]]]]]
+
 [define [op-tst s bp]
   [if [and [equal? s 2] [equal? 5 [gbk-length [cdar bp]]]]
     [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]
