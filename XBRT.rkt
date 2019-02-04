@@ -51,86 +51,21 @@ A functional eXtensible Binary Radix Tree implementation.
 
 [struct extv [val] #:transparent]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
-[define xf-dac [lambda [va l r x]
-  [let [[v [if [null? va]
-           [if [null? x] null [extv-val x]]
-           [if [equal? va [void]] null
-             [if [null? x] [list va] [cons va [extv-val x]] ]]]]]
-    [extv v]]]]
-
-[define xf-acf [lambda [va l r x]
-  [let [[v [if [null? va]
-           [if [null? x] null [extv-val x]]
-           [if [equal? va [void]] null
-             [if [null? x]
-                 [let [[o [open-output-file [car va] #:exists 'replace]]]
-                   [displayln [cdr va] o] o]
-                 [begin [displayln [cdr va] [extv-val x]] [extv-val x]]] ]]]]
-    [extv v]]]]
-
-
-
-[struct xval extv [count node-height key-height] #:transparent]
-
-[define [xf-statv v l r]
-  [if [null? l]
-    [if [null? r]
-      [values v [inz v] 0 0]
-      [values v [+ [inz v] [xval-count [xbrt-ext r]]]
-              [+ 1 [xval-node-height [xbrt-ext r]]]
-              [+ [gbk-length [xbrt-key r]] [xval-key-height [xbrt-ext r]]]]]
-    [if [null? r]
-      [values v [+ [inz v] [xval-count [xbrt-ext l]]]
-              [+ 1 [xval-node-height [xbrt-ext l]]]
-              [+ [gbk-length [xbrt-key l]] [xval-key-height [xbrt-ext l]]]]
-      [values v [+ [inz v] [xval-count [xbrt-ext l]][xval-count [xbrt-ext r]]]
-              [+ 1 [max [xval-node-height [xbrt-ext l]][xval-node-height [xbrt-ext r]]]]
-              [max [+ [gbk-length [xbrt-key l]][xval-key-height [xbrt-ext l]]]
-                   [+ [gbk-length [xbrt-key r]][xval-key-height [xbrt-ext r]]]]]]]]
-
-[define xf-stat [lambda [va l r x]
-  [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
-    [call-with-values [lambda [] [xf-statv v l r]] [lambda [v c n k] [xval v c n k]]]]]]
-
-
-[struct xacc xval [tcount] #:transparent]
-
-[define xf-acc [lambda [va l r x]
-[let [[v [if [null? va]
-           [if [null? x] null [extv-val x]]
-           [if [equal? va [void]] null ;[cons va [extv-val x]]
-             [if [null? x] va [cons [+ [car va] [car [extv-val x]]] [cdr va]]]]]]]
-  [let [[lc [if [null? v] 0 1]][lacc [if [null? v] 0 [car v]]]]
-    [let-values [[[v c n k][xf-statv v l r]]]
-    [if [null? l]
-      [if [null? r]
-        [xacc v c n k lacc]
-        [xacc v c n k [+ lacc [xacc-tcount [xbrt-ext r]]]]]
-      [if [null? r]
-        [xacc v c n k [+ lacc [xacc-tcount [xbrt-ext l]]]]
-        [xacc v c n k [+ lacc [xacc-tcount [xbrt-ext l]][xacc-tcount [xbrt-ext r]]]]]]]]]]]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;*****
-
-[struct xgen extv [tree-stats accum] #:transparent]
-
 [define xf-def [lambda [va l r x]
   [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
     [extv v]]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[struct xgen extv [tree-stats accum] #:transparent]
+
 ;****
 [define [val-def va x] va]
 
-[define [mk-val-acc-func accf] [lambda [va x] [if [null? x] va [accf va [extv-val x]]]]]
-;[define val-sum [mk-val-acc-func +]]
-[define [val-sum va x] [if [null? x] va [cons [car va] [+ [cdr va] [cdr [extv-val x]]]]]]
+[define [mk-val-acc-func accf init] [lambda [va x] [if [null? x] [accf va init] [accf va [extv-val x]]]]]
+
+[define val-sum [mk-val-acc-func + 0]]
+[define val-cons [mk-val-acc-func cons null]]
 
 [define [mk-val-port-func portf]
   [lambda [va x]
@@ -138,17 +73,9 @@ A functional eXtensible Binary Radix Tree implementation.
       [let [[o [portf [car va]]]]
         [displayln [cdr va] o] o]
         [begin [displayln [cdr va] [extv-val x]] [extv-val x]]]]]
-;[define val-file [mk-val-port-func [lambda [x] [open-output-file x #:exists 'replace]]]]
+
+[define val-file [mk-val-port-func [lambda [x] [open-output-file x #:exists 'replace]]]]
 [define val-file-app [mk-val-port-func [lambda [x] [open-output-file x #:exists 'append]]]]
-
-;;
-[define [val-file va x]
-               [if [null? x]
-                 [let [[o [open-output-file [car va] #:exists 'replace]]]
-                   [displayln [cdr va] o] o]
-                   [begin [displayln [cdr va] [extv-val x]] [extv-val x]]]]
-;;
-
 
 ;****
 [struct tree-stat [ncount vcount node-height key-height] #:transparent]
@@ -179,6 +106,7 @@ A functional eXtensible Binary Radix Tree implementation.
 [define xgen-def [mk-xgenf val-def xgen-def-stat xgen-def-acc-func]]
 [define xgen-file [mk-xgenf val-file xgen-def-stat xgen-def-acc-func]]
 [define xgen-sum [mk-xgenf val-sum xgen-def-stat xgen-def-acc-func]]
+[define xgen-cons [mk-xgenf val-cons xgen-def-stat xgen-def-acc-func]]
 
 ;;;*****
 
@@ -291,10 +219,6 @@ A functional eXtensible Binary Radix Tree implementation.
           [if [< hmi hbl] t
             [rec-mend-bp b [xf [void] l r x] l r [cdr np] xf]]]]]]]
              
-
-;[define [nset t k n [xf null]] [void]];[values t xv] this really just merge.
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
