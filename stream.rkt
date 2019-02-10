@@ -175,14 +175,20 @@ including some examples taken from the documentation for srfi/41
     [join-base lt nsc]]]
 
 [define [stream-join lt ls rs]
-  [let [[sc [cons ls rs]]]
-    [stream-unfold
-      [lambda [x] [list [stream-car [car x]][stream-car [cdr x]]]]
-      [lambda [x] [not [and [null? [stream-car [car x]]][null? [stream-car [cdr x]]]]]]
-      [lambda [x] [join-iter lt x]]
-      [join-base lt sc]]]]
+    [let [[sc [cons ls rs]]]
+      [stream-unfold
+        [lambda [x] [list [stream-car [car x]][stream-car [cdr x]]]]
+        [lambda [x] [not [and [null? [stream-car [car x]]][null? [stream-car [cdr x]]]]]]
+        [lambda [x] [join-iter lt x]]
+        [join-base lt sc]]]]
 
-;filters left left-abj xor and
+;filters left left-excl xor and right right-excl
+[define [join-filter-left x] [not [null? [car x]]]]
+[define [join-filter-left-excl x] [and [not [null? [car x]]] [null? [cdr x]]]]
+[define [join-filter-right x] [not [null? [cdr x]]]]
+[define [join-filter-right-excl x] [and [not [null? [cdr x]]] [null? [car x]]]]
+[define [join-filter-xor x] [xor [not [null? [car x]]] [not [null? [cdr x]]]]]
+[define [join-filter-and x] [and [not [null? [car x]]] [not [null? [cdr x]]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -258,6 +264,10 @@ including some examples taken from the documentation for srfi/41
 
 ]]
  
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;[test-strms]
+[define [test-join x y]
+  [let [[a [stream-sort < [stream-map [lambda [z] [random x]] [stream-take y [stream-from 1]]]]]
+        [b [stream-sort < [stream-map [lambda [z] [random x]] [stream-take y [stream-from 1]]]]]]
+     [let [[r [stream-join < a b]]]
+       [time [disp-stream r]]]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

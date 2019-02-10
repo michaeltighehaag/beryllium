@@ -224,110 +224,81 @@ A functional eXtensible Binary Radix Tree implementation.
 
 [define [fct-first t cf pxf]
   [if [cf t null]
-    [values 0 null]
-    [values 1 [list [cons t [pxf t null]]]]]]
+    [cons 0 null]
+    [cons 1 [list [cons t [pxf t null]]]]]]
 
 [define [fct-next s bp cf pxf]
   [if [equal? 1 s]
     [let [[l [xbrt-left [caar bp]]]]
       [if [or [null? l] [cf l bp]]
-        [values 2 bp]
-        [values 1 [cons [cons l [pxf l bp]] bp]]]]
+        [cons 2 bp]
+        [cons 1 [cons [cons l [pxf l bp]] bp]]]]
     [if [equal? 2 s]
       [let [[r [xbrt-right [caar bp]]]]
         [if [or [null? r] [cf r bp]]
-          [values 3 bp]
-          [values 1 [cons [cons r [pxf r bp]] bp]]]]
+          [cons 3 bp]
+          [cons 1 [cons [cons r [pxf r bp]] bp]]]]
       [if [null? [cdr bp]]
-        [values 0 null]
+        [cons 0 null]
         [if [equal? 0 [xbrt-kfb? [caar bp]]]
-          [values 2 [cdr bp]]
-          [values 3 [cdr bp]]]]]]]
+          [cons 2 [cdr bp]]
+          [cons 3 [cdr bp]]]]]]]
 
 [define [fct-last t cf pxf]
   [if [cf t null]
-    [values 0 null]
-    [values 3 [list [cons t [pxf t null]]]]]]
+    [cons 0 null]
+    [cons 3 [list [cons t [pxf t null]]]]]]
 
 [define [fct-prev s bp cf pxf]
   [if [equal? 3 s]
     [let [[r [xbrt-right [caar bp]]]]
       [if [or [null? r] [cf r bp]]
-        [values 2 bp]
-        [values 3 [cons [cons r [pxf r bp]] bp]]]]
+        [cons 2 bp]
+        [cons 3 [cons [cons r [pxf r bp]] bp]]]]
     [if [equal? 2 s]
       [let [[l [xbrt-left [caar bp]]]]
         [if [or [null? l] [cf l bp]]
-          [values 1 bp]
-          [values 3 [cons [cons l [pxf l bp]] bp]]]]
+          [cons 1 bp]
+          [cons 3 [cons [cons l [pxf l bp]] bp]]]]
       [if [null? [cdr bp]]
-        [values 0 null]
+        [cons 0 null]
         [if [equal? 0 [xbrt-kfb? [caar bp]]]
-          [values 1 [cdr bp]]
-          [values 2 [cdr bp]]]]]]]
+          [cons 1 [cdr bp]]
+          [cons 2 [cdr bp]]]]]]]
 
 
-[define [cf-def n bp] #f]
-[define [pxf-def n bp] [if [null? bp] [xbrt-key n][gbk-cat [cdar bp][xbrt-key n]]]]
-[define [op-def s bp]
- [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]]
+[define [tdp-def n bp] #f]
+[define [tpf-def n bp] [if [null? bp] [xbrt-key n][gbk-cat [cdar bp][xbrt-key n]]]]
+[define [vtf-def s bp] [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]]
 
-
-[define [cf-tst n bp] [< 5 [+ [gbk-length [xbrt-key n]] [if [null? bp] 0 [gbk-length [cdar bp]]]]]]
-
-[define [op-tst s bp]
+[define [tdp-tst n bp] [< 5 [+ [gbk-length [xbrt-key n]] [if [null? bp] 0 [gbk-length [cdar bp]]]]]]
+[define [vtf-tst s bp]
   [if [and [equal? s 2] [equal? 5 [gbk-length [cdar bp]]]]
     [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]
     [void]]]
 
 
+[define [pre-val s bp]
+  [if [equal? s 1]
+    [let [[v [extv-val [xbrt-ext [caar bp]]]]]
+      [if [null? v] [void] [list v]]]
+    [void]]]
 
-[define [op-pre s bp] [if [equal? s 1] [extv-val [xbrt-ext [caar bp]]][void]]]
 
-[define [strm-fct t cf pxf op]
+[define [stream<-index t #:tdp [tdp tdp-def] #:tpf [tpf tpf-def] #:vtf [vtf vtf-def]]
   [stream-filter [lambda [x] [not [void? x]]]
     [stream-unfold
-      [lambda [x] [op [car x][cdr x]]]
+      [lambda [x] [vtf [car x][cdr x]]]
       [lambda [x] [< 0 [car x]]]
-      [lambda [x] [call-with-values [lambda [] [fct-next [car x] [cdr x] cf pxf]] cons]]
-      [call-with-values [lambda [] [fct-first t cf pxf]] cons]]]]
-
-
-[define [preorder-init t cf pxf]
-  [let-values [[[s bp] [fct-first t cf pxf]]]
-    [if [null? [extv-val [xbrt-ext [caar bp]]]]
-      [preorder-iter s bp cf pxf]
-      [values s bp]]]]
-[define [preorder-iter s bp cf pxf]
-  [let-values [[[s bp] [fct-next s bp cf pxf]]]
-    [if [or [and [equal? s 1] [not [null? [extv-val [xbrt-ext [caar bp]]]]]] [equal? s 0]]
-      [values s bp]
-      [preorder-iter s bp cf pxf]]]]
-
-[define [strm-preorder t]
-  [stream-unfold
-    [lambda [x] [list [extv-val [xbrt-ext [caadr x]]]]]
-    [lambda [x] [< 0 [car x]]]
-    [lambda [x] [call-with-values [lambda [] [preorder-iter [car x] [cdr x] cf-def pxf-def]] cons]]
-    [call-with-values [lambda [] [preorder-init t cf-def pxf-def]] cons]]]
-
-[define [fmode-init m t cf pxf]
-  [let-values [[[s bp] [fct-first t cf pxf]]]
-    [if [null? [extv-val [xbrt-ext [caar bp]]]]
-      [fmode-iter m s bp cf pxf]
-      [values s bp]]]]
-[define [fmode-iter m s bp cf pxf]
-  [let-values [[[s bp] [fct-next s bp cf pxf]]]
-    [if [or [and [equal? s m] [not [null? [extv-val [xbrt-ext [caar bp]]]]]] [equal? s 0]]
-      [values s bp]
-      [fmode-iter m s bp cf pxf]]]]
-
-[define [strm-fmode m t]
-  [stream-unfold
-    [lambda [x] [list [extv-val [xbrt-ext [caadr x]]]]]
-    [lambda [x] [< 0 [car x]]]
-    [lambda [x] [call-with-values [lambda [] [fmode-iter m [car x] [cdr x] cf-def pxf-def]] cons]]
-    [call-with-values [lambda [] [fmode-init m t cf-def pxf-def]] cons]]]
+      [lambda [x] [fct-next [car x] [cdr x] tdp tpf]]
+      [fct-first t tdp tpf]]]]
+[define [stream<-index-rev t #:tdp [tdp tdp-def] #:tpf [tpf tpf-def] #:vtf [vtf vtf-def]]
+  [stream-filter [lambda [x] [not [void? x]]]
+    [stream-unfold
+      [lambda [x] [vtf [car x][cdr x]]]
+      [lambda [x] [< 0 [car x]]]
+      [lambda [x] [fct-prev [car x] [cdr x] tdp tpf]]
+      [fct-last t tdp tpf]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -359,8 +330,8 @@ A functional eXtensible Binary Radix Tree implementation.
     [display "tree build timing: "]
     [let* [[t [time [rec-set [mk-root xgen-def] rkl xgen-def]]]
           [dt [xdel t  [rbk<-bin-char-str re] xgen-def]]]
-      [let [[res [stream->list [stream-map car [strm-preorder t]]]]
-            [dres [stream->list [stream-map car [strm-preorder dt]]]]]
+      [let [[res [stream->list [stream-map car [stream<-index t #:vtf pre-val]]]]
+            [dres [stream->list [stream-map car [stream<-index dt #:vtf pre-val]]]]]
       [if [equal? res skl]  [displayln "passed xset test!"]
                             [displayln "FAILED xset test!"]]
       [if [equal? dres dskl]  [displayln "passed xdel test!"]
@@ -370,10 +341,10 @@ A functional eXtensible Binary Radix Tree implementation.
 [define [xbrt-test]
     [let [[mt [unit-test 12 64]]]
       [displayln "fct strm def:"]   
-      [disp-stream [stream-take 20 [strm-fct [car mt] cf-def pxf-def op-def]]]
-      [disp-stream [stream-take 20 [strm-preorder [car mt]]]]
+      [disp-stream [stream-take 20 [stream<-index [car mt]]]]
+      [disp-stream [stream-take 20 [stream<-index [car mt] #:vtf pre-val]]]
       [displayln "fct strm tst:"]
-      [disp-stream [strm-fct [car mt] cf-tst pxf-def op-tst]]
+      [disp-stream [stream<-index [car mt] #:tdp tdp-tst #:vtf vtf-tst]]
       [xget [car mt] [rbk<-bin-char-str ""]]]]
 
 
@@ -386,18 +357,12 @@ A functional eXtensible Binary Radix Tree implementation.
     [let [[e [car l]]]
       [rec-set [xset t [rbk<-bin-char-str e] e xf ] [cdr l] xf ]]]]
 
-[define [rec-strm-set t s xf]
+[define [brt<-stream kf vf xf s]
+  [brt<-stream-rec [mk-root xf] kf vf xf s]]
+[define [brt<-stream-rec t kf vf xf s]
   [if [stream-null? s] t
     [let [[e [stream-car s]]]
-      [rec-strm-set [xset t [rbk<-string e] [cons 1 e] xf] [stream-cdr s] xf]]]]
-
-
-[define [stream-set kf vf xf s]
-  [rec-stream-set [mk-root xf] kf vf xf s]]
-[define [rec-stream-set t kf vf xf s]
-  [if [stream-null? s] t
-    [let [[e [stream-car s]]]
-      [rec-stream-set [xset t [kf e] [vf e] xf] kf vf xf [stream-cdr s]]]]]
+      [brt<-stream-rec [xset t [kf e] [vf e] xf] kf vf xf [stream-cdr s]]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
