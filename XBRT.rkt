@@ -285,14 +285,14 @@ A functional eXtensible Binary Radix Tree implementation.
     [void]]]
 
 
-[define [stream<-index t #:tdp [tdp tdp-def] #:tpf [tpf tpf-def] #:vtf [vtf vtf-def]]
+[define [stream<-xbrt t #:tdp [tdp tdp-def] #:tpf [tpf tpf-def] #:vtf [vtf vtf-def]]
   [stream-filter [lambda [x] [not [void? x]]]
     [stream-unfold
       [lambda [x] [vtf [car x][cdr x]]]
       [lambda [x] [< 0 [car x]]]
       [lambda [x] [fct-next [car x] [cdr x] tdp tpf]]
       [fct-first t tdp tpf]]]]
-[define [stream<-index-rev t #:tdp [tdp tdp-def] #:tpf [tpf tpf-def] #:vtf [vtf vtf-def]]
+[define [stream<-xbrt-rev t #:tdp [tdp tdp-def] #:tpf [tpf tpf-def] #:vtf [vtf vtf-def]]
   [stream-filter [lambda [x] [not [void? x]]]
     [stream-unfold
       [lambda [x] [vtf [car x][cdr x]]]
@@ -357,12 +357,12 @@ A functional eXtensible Binary Radix Tree implementation.
     [let [[e [car l]]]
       [rec-set [xset t [rbk<-bin-char-str e] e xf ] [cdr l] xf ]]]]
 
-[define [brt<-stream kf vf xf s]
-  [brt<-stream-rec [mk-root xf] kf vf xf s]]
-[define [brt<-stream-rec t kf vf xf s]
+[define [xbrt<-stream kf vf xf s]
+  [xbrt<-stream-rec [mk-root xf] kf vf xf s]]
+[define [xbrt<-stream-rec t kf vf xf s]
   [if [stream-null? s] t
     [let [[e [stream-car s]]]
-      [brt<-stream-rec [xset t [kf e] [vf e] xf] kf vf xf [stream-cdr s]]]]]
+      [xbrt<-stream-rec [xset t [kf e] [vf e] xf] kf vf xf [stream-cdr s]]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
