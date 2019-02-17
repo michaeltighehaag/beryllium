@@ -256,8 +256,8 @@ including some examples taken from the documentation for srfi/41
     
     [disp-stream [stream-chunk 7 [stream<-cmd "ls -l"]]]
     
-    [define jts1 [stream 1 2 4 5 5 5 8 9 11]]
-    [define jts2 [stream 2 3 5 6 8 8 9 12]]
+    [define jts1 [stream 1 2 4 4 5 5 5 8 9 11]]
+    [define jts2 [stream 2 3 3 5 6 8 8 9 12]]
     [displayln "full join"]
     [disp-stream [stream-join < jts1 jts2]]
 

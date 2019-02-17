@@ -41,6 +41,8 @@ A functional eXtensible Binary Radix Tree implementation.
 [define [rbk<-bin-char-str s]
   [let [[sl [string-length s]]]
     [rbk<-int [if [equal? sl 0] 0 [string->number s 2]] sl]]]
+[define [string<-rbk k]
+  [bytes->string/utf-8 [bit-string->bytes [rbk-bits k]]]]
 
 [define [xbrt-kfb? n][gbk-ref [xbrt-key n] 0]]
 
@@ -277,7 +279,13 @@ A functional eXtensible Binary Radix Tree implementation.
     [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]
     [void]]]
 
-
+[define [cstr-kvps-pre s bp]
+  [let [[k [string<-rbk [cdar bp]]]
+        [v [extv-val [xbrt-ext [caar bp]]]]]
+    [if [and [equal? 1 s] [not [null? v]]]
+      [cons k v]
+      [void]]]] 
+      
 [define [pre-val s bp]
   [if [equal? s 1]
     [let [[v [extv-val [xbrt-ext [caar bp]]]]]
