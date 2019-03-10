@@ -18,6 +18,7 @@
 [provide [all-from-out "X3D.rkt"]]
 [provide [all-from-out "HTML.rkt"]]
 
+[provide spider]
 [provide spider-group]
 [provide spider-test]
 [provide spider-test-pool]
