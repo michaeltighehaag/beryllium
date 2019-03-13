@@ -1,7 +1,4 @@
 #lang racket
-;[require racket/require [path-up "main.rkt"]]
-;[require racket/require [path-up "XML.rkt"]]
-;[require racket/require [path-up "HTML.rkt"]]
 [require "common.rkt"]
 [require "stream.rkt"]
 [require "XBRT.rkt"]
@@ -136,7 +133,7 @@
 
 [define [write-x3d-html name x3dom-js x3dom-css jq-js c-js body-list]                                            
   [let [[out-file [open-output-file [string-append name ".html"] #:exists 'replace]]]
-    [write-html [mk-xhtml [mk-x3dom-head name x3dom-js x3dom-css jq-js c-js] body-list] out-file]
+    [write-html [mk-html [list] [list] [mk-x3dom-head name x3dom-js x3dom-css jq-js c-js] [list] body-list] out-file]
     [close-output-port out-file]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

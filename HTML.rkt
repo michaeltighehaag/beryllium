@@ -1,6 +1,4 @@
 #lang racket
-
-
 [require html-writing]
 
 [provide [all-from-out html-writing]]
@@ -32,16 +30,9 @@
 [define [html:a al el] [cons 'a [cons [cons '@ al] el]]]
 
 
-[define [mk-html html-attr-list head-list body-list]
+[define [mk-html html-attr-list head-attr-list head-list body-attr-list body-list]
   [html:html html-attr-list [list
-      [html:head [list] head-list]
-      [html:body [list] body-list]
-  ]]]
-
-
-[define [mk-xhtml head-list body-list]
-  [html:html [list [list 'xmlns "http://www.w3.org/1999/xhtml"]] [list
-      [html:head [list] head-list]
-      [html:body [list] body-list]
+      [html:head head-attr-list head-list]
+      [html:body body-attr-list body-list]
   ]]]
 
