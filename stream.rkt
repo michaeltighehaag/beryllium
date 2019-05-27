@@ -237,6 +237,44 @@ including some examples taken from the documentation for srfi/41
           [stream-cons c
             [loop [read-line in-p]]]]]]]
 
+ 
+[define [rep-read-output port prompt]
+    [let [[r [regexp-match [regexp [cat "^" prompt "|^[^\n]*\n"]] port]]]
+     [if [list? r]
+       [let [[res [bytes->string/utf-8 [car r]]]]
+         [if [equal? prompt res] 'prompt
+           [substring res 0 [sub1 [string-length res]]]]]
+       eof]]]
+
+[define [stream<-reps cmd arg-list prompt strm]
+  [if [stream-null? strm] stream-null
+    [let-values [[[in-p out-p pid err-p stat]
+                  [apply values [apply process*/ports #f #f [current-output-port] cmd arg-list]]]]
+      [file-stream-buffer-mode out-p 'line]
+      [let [[dn [open-output-file "/dev/null" #:exists 'append ]]]
+        [stream-rep strm "> " dn in-p out-p pid err-p stat]
+      ]]]]
+
+[define [stream-rep cs prmpt dn ip op pid err-p stat]
+    [rep-help [cons stream-null prmpt] dn ip op]
+    [stream-unfold
+      [lambda [x] [car x]]
+      [lambda [x] [not [null? [car x]]] ]
+      [lambda [x] [if [stream-null? [cdr x]]
+                    [cons null null]
+                    [cons [rep-help [stream-car [cdr x]] dn ip op] [stream-cdr [cdr x]]]]]
+      [cons [rep-help [stream-car cs] dn ip op] [stream-cdr cs]]]]
+ 
+[define [rep-help z dn ip op]
+  [stream-for-each [lambda [x] [displayln x op][flush-output op]] [car z]]
+  [let [[res [stream-unfold
+               [lambda [x] [car x]]
+               [lambda [x] [not [or [equal? [car x] 'prompt][equal? [car x] eof]]]] 
+               [lambda [x] [cons [rep-read-output [cdr x] [cdr z]] [cdr x]]]
+               [cons [rep-read-output ip [cdr z]] ip]]]]
+    [disp-stream res dn]
+    res]]   
+
 ;********************************************************************************************
 ;*** Tests ***
 ;********************************************************************************************
