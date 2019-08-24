@@ -201,8 +201,8 @@ including some examples taken from the documentation for srfi/41
           [stream-cons c
             [loop [read-line p]]]]]]]
 
-[define [file<-stream file pf strm]
-  [let [[o [open-output-file file #:exists 'replace]]]
+[define [file<-stream file pf strm [mode 'replace]]
+  [let [[o [open-output-file file #:exists mode]]]
     [stream-for-each [lambda [x] [pf x o]] strm]
     [close-output-port o]]]
 
