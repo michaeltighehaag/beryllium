@@ -96,24 +96,40 @@
 [list "2" "2" "d"]
 ]]
 
-
-[define [html-table-test]                                            
-  [let [[out-file-html [open-output-file [string-append "../html-table-test" ".html"] #:exists 'replace]]]
-    [write-html [mk-html [list]
-                         [list]
-                         [list [html:link [list [cons 'rel "stylesheet"]
-                                                [cons 'type "text/css"]
-                                                [cons 'href "./html-table-test.css"]]
-                                          [list]]]
-                         [list]
-                         [list
+[define html-table-body-test
+  [list
     [html:div
       [list [cons 'class "grid-container"]]
-      [test-divs mtd]]]] out-file-html]
-    [close-output-port out-file-html]
-    [file<-stream "../html-table-test.css" displayln [test-css mtd]]
+      [test-divs mtd]]]]
 
-    ]]
+[define [mk-css-style name]
+  [html:link
+    [list [cons 'rel "stylesheet"]
+          [cons 'type "text/css"]
+          [cons 'href name]]
+    [list]]]
+
+[define [mk-js-script name]
+  [html:link
+    [list [cons 'type "text/javascript"]
+          [cons 'href name]]
+    [list]]]
+
+[define [files<-html path name htmll css-sl js-sl]
+  [let [[out-file-html [open-output-file [string-append path name ".html"] #:exists 'replace]]]
+    [write-html
+      [mk-html [list]
+               [list]
+               [list [mk-css-style [cat "./" name ".css"]]]
+               [list]
+               html-table-body-test]
+      out-file-html]
+    [close-output-port out-file-html]
+    [file<-stream [cat path name ".css"] displayln css-sl ]
+   ]]
+
+[define [html-table-test] [files<-html "../" "html-table-test2" html-table-body-test [test-css mtd] [list]]]
+  
 
 
 
