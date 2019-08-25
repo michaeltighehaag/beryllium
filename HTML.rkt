@@ -1,5 +1,7 @@
 #lang racket
 [require html-writing]
+[require "common.rkt"]
+[require "stream.rkt"]
 
 [provide [all-from-out html-writing]]
 
@@ -35,4 +37,83 @@
       [html:head head-attr-list head-list]
       [html:body body-attr-list body-list]
   ]]]
+
+
+
+[define table-div-css  
+  [stream
+".grid-container {"
+"  display: inline-grid;"
+"  grid-gap: 10px;"
+"  background-color: rgb(159, 159, 255);"
+"  padding: 10px 10px 10px 10px; "
+"  border: 0px solid rgba(0, 0, 0, 0.8);"
+"  text-align: center;"
+"}"
+".grid-container > div {"
+"  background-color: rgb(223, 223, 255);"
+"  padding: 10px 10px 10px 10px;"
+"  font-size: 20px;"
+"}"
+".colhead { background-color: rgb(219, 219, 255); "
+"           writing-mode: vertical-rl; "
+"           transform: rotate(180deg); "
+"           text-align:left; "
+"}"
+".rowhead { "
+"  background-color: rgb(159, 159, 255);"
+"}"
+]]
+
+[define diff-css [stream
+".mc {"
+"  background-color:rgb(255,219,219);"
+"}"
+]]          
+
+[define [mk-dcss l] [stream
+[cat "#id" [list-ref l 0] "-" [list-ref l 1] " {"]
+[cat "  grid-area: " [list-ref l 0] " / " [list-ref l 1] " / span 1 / span 1;"] 
+[cat "}"]]]
+
+[define [test-css d] 
+  [stream-append
+    table-div-css
+    [stream-concat [stream-map mk-dcss d]]
+    ]]
+
+[define [mk-div l]
+  [html:div [list [cons 'id [cat "id" [list-ref l 0] "-" [list-ref l 1]]]] [list [list-ref l 2]]]]
+  
+[define [test-divs d]
+  [list<-stream
+  [stream-map mk-div d]]]
+
+[define mtd [stream
+[list "1" "1" "a"]
+[list "1" "2" "b"]
+[list "2" "1" "c"]
+[list "2" "2" "d"]
+]]
+
+
+[define [html-table-test]                                            
+  [let [[out-file-html [open-output-file [string-append "../html-table-test" ".html"] #:exists 'replace]]]
+    [write-html [mk-html [list]
+                         [list]
+                         [list [html:link [list [cons 'rel "stylesheet"]
+                                                [cons 'type "text/css"]
+                                                [cons 'href "./html-table-test.css"]]
+                                          [list]]]
+                         [list]
+                         [list
+    [html:div
+      [list [cons 'class "grid-container"]]
+      [test-divs mtd]]]] out-file-html]
+    [close-output-port out-file-html]
+    [file<-stream "../html-table-test.css" displayln [test-css mtd]]
+
+    ]]
+
+
 
