@@ -175,4 +175,4 @@
       [stream-append diff-css table-div-css [mk-table-css [stream ts1 ts2]]]]
     ]]
 
-[html-table-test1]
+;[html-table-test1]
