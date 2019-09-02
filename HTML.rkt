@@ -132,9 +132,9 @@
   [let [[n [wht-h [car l] r lev i d p]]]
     [if [null? [cdr l]] n [wht-l [cdr l] n lev [+ i [leaf-count [car l]]] d p]]]]
 
-[define [mk-table-header-block t]
+[define [mk-table-header-block t tid]
   [stream<-list
-    [map [lambda [x] [cons [car x] [cons "t2" [map number->string [cdr x]]]]]
+    [map [lambda [x] [cons [car x] [cons tid [map number->string [cdr x]]]]]
          [walk-header-tree t 0]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -148,14 +148,18 @@
 
 [define [test-df p x y xh yh] [list [cat "h" xh "v" yh "?"] p x "1" y "1"]]
 
+[define [transpose-cells l]
+  [list [car l] [cat "t"[cadr l]] [list-ref l 4] [list-ref l 5] [list-ref l 2][list-ref l 3]]]
 
-[define [html-table-test1]                                            
+[define [html-table-test]                                            
   [let* [[ts1 [mk-table-stream-block test-df "t1" 1 test-rs 1 test-cs]]
-         [ts2 [mk-table-header-block test-header]]
-         [name "html-table-test1"]
+         [ts2 [mk-table-header-block test-header "t2"]]
+         [ts3 [stream-map transpose-cells ts2]]
+         [name "html-table-test"]
          [out-file-html [open-output-file [cat "../" name ".html"] #:exists 'replace]]]
     [disp-stream ts1]
     [disp-stream ts2]
+    [disp-stream ts3]
     [write-html
       [mk-html [list] [list]
         [list [mk-css-link [cat "./" name ".css"]]]
@@ -168,11 +172,13 @@
           [mk-table-divs ts1]
           [list [html:p [list] [list "New table"]]]
           [mk-table-divs ts2]
+          [list [html:p [list] [list "New table"]]]
+          [mk-table-divs ts3]
           ]]
       out-file-html]
     [close-output-port out-file-html]
     [file<-stream [cat "../" name ".css"] displayln
-      [stream-append diff-css table-div-css [mk-table-css [stream ts1 ts2]]]]
+      [stream-append diff-css table-div-css [mk-table-css [stream ts1 ts2 ts3]]]]
     ]]
 
-;[html-table-test1]
+;[html-table-test]
