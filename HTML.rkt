@@ -100,9 +100,9 @@
     [list<-stream [stream-map mk-table-div-element ds]]]]
 
 
-[define [mk-table-stream-block df p row-start row-strm col-start col-strm]
-  [let [[nrs [stream-zip row-strm [stream-map [lambda [x] [number->string x]] [stream-from row-start]]]]
-        [ncs [stream-zip col-strm [stream-map [lambda [x] [number->string x]] [stream-from col-start]]]]]
+[define [mk-table-stream-block df p row-strm col-strm]
+  [let [[nrs [stream-zip row-strm  [stream-from 1]]]
+        [ncs [stream-zip col-strm [stream-from 1]]]]
   [stream-concat
   [stream-map
     [lambda [x]
@@ -132,34 +132,52 @@
   [let [[n [wht-h [car l] r lev i d p]]]
     [if [null? [cdr l]] n [wht-l [cdr l] n lev [+ i [leaf-count [car l]]] d p]]]]
 
-[define [mk-table-header-block t tid]
+[define [mk-table-header-block t tid ]
   [stream<-list
-    [map [lambda [x] [cons [car x] [cons tid [map number->string [cdr x]]]]]
+    [map [lambda [x] [cons [car x] [cons tid [cdr x]]]]
          [walk-header-tree t 0]]]]
+
+[define [shift-block xs ys s]
+  [stream-map [lambda [z]
+         [list [car z] [cadr z]
+               [+ xs [list-ref z 2]] [list-ref z 3]
+               [+ ys [list-ref z 4]] [list-ref z 5]]]
+       s]]
+       
+[define [set-block s]
+  [stream-map
+    [lambda [z] [cons [car z] [cons [cadr z] [map number->string [cddr z]]]]] s]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define test-rs [stream-map [lambda [x] [pad x 2]] [stream-range 21 30]]]
 [define test-cs [stream-map [lambda [x] [pad x 2]] [stream-range 70 81]]]
+
 [define test-header
   [list "a"
     [list [list "s1" [html:br [list] [list]] "new line"] [list "x1"] [list "x2"] [list "x3"]]
     [list "s2" [list "y1"] [list "y2" [list "z1"][list "z2"]] [list "y3"]]]]
 
-[define [test-df p x y xh yh] [list [cat "h" xh "v" yh "?"] p x "1" y "1"]]
+[define [test-df p x y xh yh] [list [cat "h" xh "v" yh "?"] p x 1 y 1]]
 
 [define [transpose-cells l]
-  [list [car l] [cat "t"[cadr l]] [list-ref l 4] [list-ref l 5] [list-ref l 2][list-ref l 3]]]
+  [list [car l] [cadr l] [list-ref l 4] [list-ref l 5] [list-ref l 2][list-ref l 3]]]
 
 [define [html-table-test]                                            
-  [let* [[ts1 [mk-table-stream-block test-df "t1" 1 test-rs 1 test-cs]]
-         [ts2 [mk-table-header-block test-header "t2"]]
+  [let* [[ts2 [shift-block 0 4 [mk-table-header-block test-header "tf"]]]
          [ts3 [stream-map transpose-cells ts2]]
+         [ts4 [stream-map car [stream-sort [pred-pos-sort < 4] [stream-filter [val-pos-filter 1 5] ts2 ]]]]
+         [ts5 [stream-map car [stream-sort [pred-pos-sort < 2] [stream-filter [val-pos-filter 1 3] ts3 ]]]]
+         [ts6 [shift-block 4 4 [mk-table-stream-block test-df "tf" ts4 ts5]]]
+         [tf [set-block  [stream-append ts2 ts3 ts6]]]
          [name "html-table-test"]
          [out-file-html [open-output-file [cat "../" name ".html"] #:exists 'replace]]]
-    [disp-stream ts1]
     [disp-stream ts2]
     [disp-stream ts3]
+    [disp-stream ts4]
+    [disp-stream ts5]
+    [disp-stream ts6]
+    [disp-stream tf]
     [write-html
       [mk-html [list] [list]
         [list [mk-css-link [cat "./" name ".css"]]]
@@ -169,16 +187,21 @@
                 [html:span [list [list 'class "diff-mod"]] [list "T"]]
                 "est"
                 [html:span [list [list 'class "diff-ins"]] [list "ing"]]]]]
-          [mk-table-divs ts1]
-          [list [html:p [list] [list "New table"]]]
-          [mk-table-divs ts2]
-          [list [html:p [list] [list "New table"]]]
-          [mk-table-divs ts3]
+          [mk-table-divs tf]
           ]]
       out-file-html]
     [close-output-port out-file-html]
     [file<-stream [cat "../" name ".css"] displayln
-      [stream-append diff-css table-div-css [mk-table-css [stream ts1 ts2 ts3]]]]
+      [stream-append diff-css table-div-css [mk-table-css [stream tf ]]]]
     ]]
 
+
 ;[html-table-test]
+
+[define [rx-pos-filter s n]
+  [lambda [x] [regexp-match [regexp s] [list-ref x n]]]]
+[define [val-pos-filter v n]
+  [lambda [x] [equal? v [list-ref x n]]]]
+[define [pred-pos-sort pred n]
+  [lambda [x y] [pred [list-ref x n] [list-ref y n]]]]
+[define str-as-num<? [lambda [x y] [< [string->number x][string->number y]]]] 
