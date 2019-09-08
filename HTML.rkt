@@ -112,6 +112,7 @@
     ncs]]]]
 
 
+
 [define [walk-header-tree t [p 0]]
   [wht-h t [list] 1 1 [add1  [tree-depth t]] p]]
 
@@ -138,15 +139,55 @@
          [walk-header-tree t 0]]]]
 
 [define [shift-block xs ys s]
-  [stream-map [lambda [z]
-         [list [car z] [cadr z]
-               [+ xs [list-ref z 2]] [list-ref z 3]
-               [+ ys [list-ref z 4]] [list-ref z 5]]]
-       s]]
-       
+  [stream-map
+    [lambda [z] [list [car z] [cadr z]
+                  [+ xs [list-ref z 2]] [list-ref z 3]
+                  [+ ys [list-ref z 4]] [list-ref z 5]]]  s]]
+
+[define [flip-block-x s]
+  [let [[xmin [list-ref [[stream-argext < [lambda [z] [list-ref z 4]]] s] 4]]
+        [xmax [list-ref [[stream-argext > [lambda [z] [+ [list-ref z 4] [sub1 [list-ref z 5]]]]] s] 4]]]
+    [stream-map 
+      [lambda [z]
+        [list [list-ref z 0] [list-ref z 1] [list-ref z 2] [list-ref z 3]
+              [+ 1 xmin xmax [- [+ [list-ref z 4] [list-ref z 5]]]]
+              [list-ref z 5] ]] s]]]
+
+[define [flip-block-y s]
+  [let [[ymin [list-ref [[stream-argext < [lambda [z] [list-ref z 2]]] s] 2]]
+        [ymax [list-ref [[stream-argext > [lambda [z] [+ [list-ref z 2] [sub1 [list-ref z 3]]]]] s] 2]]]
+    [stream-map 
+      [lambda [z]
+        [list [list-ref z 0] [list-ref z 1] 
+              [+ 1 ymin ymax [- [+ [list-ref z 2] [list-ref z 3]]]]
+              [list-ref z 3]
+              [list-ref z 4] [list-ref z 5] ]] s]]]
+
+[define [stream-argext r f]
+  [lambda [s] [stream-argext-help r f [void] s]]]
+
+[define [stream-argext-help r f c s]
+  [if [stream-null? s] c
+    [if [equal? c [void]]
+      [stream-argext-help r f [stream-car s] [stream-cdr s]]
+      [if [r [f [stream-car s]] [f c]]
+        [stream-argext-help r f [stream-car s] [stream-cdr s]]
+        [stream-argext-help r f c [stream-cdr s]]]]]]
+    
 [define [set-block s]
   [stream-map
     [lambda [z] [cons [car z] [cons [cadr z] [map number->string [cddr z]]]]] s]]
+
+[define [rx-pos-filter s n]
+  [lambda [x] [regexp-match [regexp s] [list-ref x n]]]]
+
+[define [val-pos-filter v n]
+  [lambda [x] [equal? v [list-ref x n]]]]
+
+[define [pred-pos-sort pred n]
+  [lambda [x y] [pred [list-ref x n] [list-ref y n]]]]
+
+[define str-as-num<? [lambda [x y] [< [string->number x][string->number y]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -165,11 +206,12 @@
 
 [define [html-table-test]                                            
   [let* [[ts2 [shift-block 0 4 [mk-table-header-block test-header "tf"]]]
+         [ts2b [flip-block-x ts2]]
          [ts3 [stream-map transpose-cells ts2]]
-         [ts4 [stream-map car [stream-sort [pred-pos-sort < 4] [stream-filter [val-pos-filter 1 5] ts2 ]]]]
+         [ts4 [stream-map car [stream-sort [pred-pos-sort < 4] [stream-filter [val-pos-filter 1 5] ts2b ]]]]
          [ts5 [stream-map car [stream-sort [pred-pos-sort < 2] [stream-filter [val-pos-filter 1 3] ts3 ]]]]
          [ts6 [shift-block 4 4 [mk-table-stream-block test-df "tf" ts4 ts5]]]
-         [tf [set-block  [stream-append ts2 ts3 ts6]]]
+         [tf [set-block  [stream-append ts2b ts3 ts6]]]
          [name "html-table-test"]
          [out-file-html [open-output-file [cat "../" name ".html"] #:exists 'replace]]]
     [disp-stream ts2]
@@ -177,6 +219,10 @@
     [disp-stream ts4]
     [disp-stream ts5]
     [disp-stream ts6]
+    [newline]
+    [displayln [[stream-argext < [lambda [z] [list-ref z 4]]] ts2]]
+    [displayln [[stream-argext > [lambda [z] [list-ref z 4]]] ts2]]
+    [newline]
     [disp-stream tf]
     [write-html
       [mk-html [list] [list]
@@ -197,11 +243,3 @@
 
 
 ;[html-table-test]
-
-[define [rx-pos-filter s n]
-  [lambda [x] [regexp-match [regexp s] [list-ref x n]]]]
-[define [val-pos-filter v n]
-  [lambda [x] [equal? v [list-ref x n]]]]
-[define [pred-pos-sort pred n]
-  [lambda [x y] [pred [list-ref x n] [list-ref y n]]]]
-[define str-as-num<? [lambda [x y] [< [string->number x][string->number y]]]] 
