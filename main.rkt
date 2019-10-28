@@ -8,6 +8,7 @@
 [require "XML.rkt"]
 [require "X3D.rkt"]
 [require "HTML.rkt"]
+[require "align.rkt"]
 
 [provide [all-from-out "common.rkt"]]
 [provide [all-from-out "stream.rkt"]]
@@ -17,6 +18,7 @@
 [provide [all-from-out "XML.rkt"]]
 [provide [all-from-out "X3D.rkt"]]
 [provide [all-from-out "HTML.rkt"]]
+[provide [all-from-out "align.rkt"]]
 
 [provide spider]
 [provide spider-group]

@@ -49,7 +49,7 @@
 ".diff-mod {"
 "  background-color:rgb(255,191,191);"
 "}"
-".diff-ins {"
+".diff-gap {"
 "  background-color:rgb(255,127,127);"
 "}"
 ]]    
@@ -232,7 +232,7 @@
           [list [html:p [list] [list
                 [html:span [list [list 'class "diff-mod"]] [list "T"]]
                 "est"
-                [html:span [list [list 'class "diff-ins"]] [list "ing"]]]]]
+                [html:span [list [list 'class "diff-gap"]] [list "ing"]]]]]
           [mk-table-divs tf]
           ]]
       out-file-html]

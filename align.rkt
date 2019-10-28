@@ -1,6 +1,8 @@
 #lang racket
 [require sxml]
 
+[provide string-diff]
+
 ;; based on pseudocode from https://en.wikipedia.org/wiki/Hirschberg%27s_algorithm ~ 2019/05/10
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;; Hirschberg      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -119,10 +121,10 @@
     [if [equal? [car lX][car lY]]
       [align->sxml [cdr lX] [cdr lY] [cons-helper 'char [car lX] nX] [cons-helper 'char [car lY] nY]] 
       [if [equal? [car lX] 'gap]
-        [align->sxml [cdr lX] [cdr lY] nX [cons-helper 'indel [car lY] nY]] 
+        [align->sxml [cdr lX] [cdr lY] nX [cons-helper 'diff-mod [car lY] nY]] 
         [if [equal? [car lY] 'gap]
-          [align->sxml [cdr lX] [cdr lY] [cons-helper 'indel [car lX] nX] nY] 
-          [align->sxml [cdr lX] [cdr lY] [cons-helper 'diff [car lX] nX] [cons-helper 'diff [car lY] nY]]]]]]] 
+          [align->sxml [cdr lX] [cdr lY] [cons-helper 'diff-mod [car lX] nX] nY] 
+          [align->sxml [cdr lX] [cdr lY] [cons-helper 'diff-gap [car lX] nX] [cons-helper 'diff-gap [car lY] nY]]]]]]] 
 
 [define [mk-string-helper x]
   [if [char? [car x]]
@@ -138,17 +140,17 @@
       [if [char? [caar cl]]
         [cons [cons c [car cl]] [cdr cl]]
         [cons [list c] cl]]]
-    [if [equal? s 'diff]
+    [if [equal? s 'diff-gap]
       [if [null? cl]
-        [list [list 'diff c]]
-        [if [equal? 'diff [caar cl]]
-          [cons [cons 'diff [cons c [cdar cl]]] [cdr cl]]
-          [cons [list 'diff c] cl]]]
+        [list [list 'diff-gap c]]
+        [if [equal? 'diff-gap [caar cl]]
+          [cons [cons 'diff-gap [cons c [cdar cl]]] [cdr cl]]
+          [cons [list 'diff-gap c] cl]]]
       [if [null? cl]
-        [list [list 'indel c]]
-        [if [equal? 'indel [caar cl]]
-          [cons [cons 'indel [cons c [cdar cl]]] [cdr cl]]
-          [cons [list 'indel c] cl]]]]]]
+        [list [list 'diff-mod c]]
+        [if [equal? 'diff-mod [caar cl]]
+          [cons [cons 'diff-mod [cons c [cdar cl]]] [cdr cl]]
+          [cons [list 'diff-mod c] cl]]]]]]
 
 [define [string-diff x y] 
   [let [[r [align x y -1 sim]]]
