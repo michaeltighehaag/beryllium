@@ -10,8 +10,8 @@ A functional eXtensible Binary Radix Tree implementation.
 [require bitsyntax]
 [require racket/generic]
 
-[provide [all-defined-out]]
 
+[provide [all-defined-out]]
 
 [define [inz n [f [lambda [n] 1]]] [if [null? n] 0 [f n]]]
 
