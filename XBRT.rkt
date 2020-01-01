@@ -124,7 +124,7 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [define [x_gen_kvp-def kvpf];kxf vxf nxf]
   [lambda [p x]
     [if [null? p]
-      [if [null? x] null [xvc-val x]]
+      [if [null? x] [begin [displayln "never reached?"] null] [xvc-val x]]
       [if [equal? p 'xbrt_del ] null [kvpf p x]]]]]
 
 [define [x_gen_xf_def t]
