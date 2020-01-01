@@ -83,11 +83,11 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [struct xbrt [key ext left right] #:transparent]
 
 [define-generics x_ext
-  [xxf x_ext p l r]]
+  [xxf x_ext]]
 
 [struct xvc [val] #:transparent
   #:methods gen:x_ext
-  [[define [xxf s p l r] [xvc p]]]]
+  [[define [xxf s] [lambda [p] [xvc p]]]]]
 
 [define-generics kxf
   [kx-f kxf p l r]]
@@ -121,32 +121,20 @@ reexamine/refactor traversal with descent predicate to account for other use cas
                           [if [null? r] 0 [x_node_def-node_height [x_gen-node_x [xbrt-ext r]]]]]]
                 ]]]]
 
-[define [x_gen_kvp-def kvpf];kxf vxf nxf]
-  [lambda [p x]
-    [if [null? p]
-      [if [null? x] [begin [displayln "never reached?"] null] [xvc-val x]]
-      [if [equal? p 'xbrt_del ] null [kvpf p x]]]]]
-
-[define [x_gen_xf_def t]
-  [lambda [p l r]
-    [let [[kx [kx-f [x_gen-key_x [xbrt-ext t]] p l r]]
-          [vx [vx-f [x_gen-val_x [xbrt-ext t]] p l r]]
-          [nx [nx-f [x_gen-node_x [xbrt-ext t]] p l r]]]
-      [x_gen p kx vx nx]]]]
-
 [struct x_gen xvc [key_x val_x node_x] #:transparent
   #:methods gen:x_ext
-  [[define [xxf s p l r]
-     [let [[kx [kx-f [x_gen-key_x s] p l r]]
-           [vx [vx-f [x_gen-val_x s] p l r]]
-           [nx [nx-f [x_gen-node_x s] p l r]]]
-       [x_gen p kx vx nx]]]]]
+  [[define [xxf s]
+     [lambda [p l r] 
+       [let [[kx [kx-f [x_gen-key_x s] p l r]]
+             [vx [vx-f [x_gen-val_x s] p l r]]
+             [nx [nx-f [x_gen-node_x s] p l r]]]
+         [x_gen p kx vx nx]]]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;    define generic xbrt functions   ;;;;;;;;;;;;;;
 
 [define-generics gxbrt
-  [xbrt-mk  gxbrt k x l r]
+  [xbrt-mk  gxbrt]
   [xbrt-set gxbrt k v]
   [xbrt-get-ext gxbrt k]
   [xbrt-get gxbrt k]
@@ -157,15 +145,15 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 ;;;;;;;;; default xbrt ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct xbrt_def xbrt [] #:transparent
   #:methods gen:gxbrt
-  [[define [xbrt-mk t k x l r] [xbrt_def k x l r]]
+  [[define [xbrt-mk t] [lambda [k x l r] [xbrt_def k x l r]]]
    [define [xbrt-set t k v]
-     [x_set t [rbk<-bin-char-str k] [cons k v] [x_gen_xf_def t] [x_gen_kvp-def val-def]]]
+     [x_set t [rbk<-bin-char-str k] [cons k v] [xxf [xbrt-ext t]] val-def [xbrt-mk t]]]
    [define [xbrt-get-ext t k]
      [x_get-ext t [rbk<-bin-char-str k] null]]
    [define [xbrt-get t k]
      [xvc-val [x_get t [rbk<-bin-char-str k] null]]]
    [define [xbrt-del t k]
-     [x_del t [rbk<-bin-char-str k] [x_gen_xf_def t] [x_gen_kvp-def val-def]]]
+     [x_del t [rbk<-bin-char-str k] [xxf [xbrt-ext t]] [xbrt-mk t]]]
 ]]
 
 [define xbrt_def_root [xbrt_def [rbk<-bin-char-str ""] [x_gen null [x_key_def 0][x_val_def 0 0][x_node_def 0 0]] null null]]
@@ -190,47 +178,45 @@ reexamine/refactor traversal with descent predicate to account for other use cas
             [qk-rec k kl nki [xbrt-key hr][xbrt-left hr][xbrt-right hr][cons hr np]]]]
         [values nki kl hmi hbl np]]]]]
 
-[define [rec_up-bp node nbp xf vf t]
+[define [rec_up-bp node nbp xf mkx]
   [if [equal? [gbk-length [xbrt-key node]] 0] node
     [let* [[h [car nbp]]
            [hb [xbrt-key h]][hext [xbrt-ext h]][hl [xbrt-left h]][hr [xbrt-right h]]]
       [rec_up-bp
         [if [equal? [gbk-ref [xbrt-key node] 0] 0]
-          [xbrt-mk t hb [xf [vf null hext] node hr] node hr]
-          [xbrt-mk t hb [xf [vf null hext] hl node] hl node]]
-        [cdr nbp] xf vf t]
+          [mkx hb [xf [xvc-val hext] node hr] node hr]
+          [mkx hb [xf [xvc-val hext] hl node] hl node]]
+        [cdr nbp] xf mkx]
       ]]]
 
-[define [x_set t k v xf vf]
+[define [x_set t k v xf vf mkx]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [let [[h [car np]]]
       [let [[b [xbrt-key h]][x [xbrt-ext h]][l [xbrt-left h]][r [xbrt-right h]]]
           [if [equal? nki kl] 
             [if [equal? hmi hbl]
-              [let [[node [xbrt-mk t b [xf [vf v x] l r] l r]]]
-                [rec_up-bp node [cdr np] xf vf t]]
-              [let [[nh [xbrt-mk t [gbk-sub-key b hmi hbl] [xf [vf null x] l r] l r]]]
+              [let [[node [mkx b [xf [vf v x] l r] l r]]]
+                [rec_up-bp node [cdr np] xf mkx]]
+              [let [[nh [mkx [gbk-sub-key b hmi hbl] [xf [xvc-val x] l r] l r]]]
                 [if [equal? [gbk-ref b hmi] 0]
-                ;    [let [[node [xbrt-mk t [gbk-sub-key b 0 hmi] [xf v nh null null] nh null]]]
-                    [let [[node [xbrt-mk t [gbk-sub-key k [- nki hmi] nki] [xf [vf v null] nh null] nh null]]]
-                      [rec_up-bp node [cdr np] xf vf t]]
-                    [let [[node [xbrt-mk t [gbk-sub-key b 0 hmi] [xf [vf v null] null nh] null nh]]]
-                      [rec_up-bp node [cdr np] xf vf t]]]]]
+                    [let [[node [mkx [gbk-sub-key k [- nki hmi] nki] [xf v nh null] nh null]]]
+                      [rec_up-bp node [cdr np] xf mkx]]
+                    [let [[node [mkx [gbk-sub-key b 0 hmi] [xf v null nh] null nh]]]
+                      [rec_up-bp node [cdr np] xf mkx]]]]]
             [if [equal? hmi hbl]
-              [let [[nn [xbrt-mk t [gbk-sub-key k nki kl] [xf [vf v null] null null] null null]]]
+              [let [[nn [mkx [gbk-sub-key k nki kl] [xf v null null] null null]]]
                 [if [equal? [gbk-ref k nki] 0]
-                    [let [[node [xbrt-mk t b [xf [vf null x] nn r] nn r]]]
-                      [rec_up-bp node [cdr np] xf vf t]]
-                    [let [[node [xbrt-mk t b [xf [vf null x] l nn] l nn]]]
-                      [rec_up-bp node [cdr np] xf vf t]]]]
-              [let [[nh [xbrt-mk t [gbk-sub-key b hmi hbl] [xf [vf null x] l r] l r]]
-                    [nn [xbrt-mk t [gbk-sub-key k nki kl] [xf [vf v null] null null] null null]]]
+                    [let [[node [mkx b [xf [xvc-val x] nn r] nn r]]]
+                      [rec_up-bp node [cdr np] xf mkx]]
+                    [let [[node [mkx b [xf [xvc-val x] l nn] l nn]]]
+                      [rec_up-bp node [cdr np] xf mkx]]]]
+              [let [[nh [mkx [gbk-sub-key b hmi hbl] [xf [xvc-val x] l r] l r]]
+                    [nn [mkx [gbk-sub-key k nki kl] [xf v null null] null null]]]
                 [if [equal? [gbk-ref k nki] 0]
-                    [let [[node [xbrt-mk t [gbk-sub-key b 0 hmi] [xf null nn nh] nn nh]]]
-                      [rec_up-bp node [cdr np] xf vf t]]
-                 ;   [let [[node [xbrt-mk t [gbk-sub-key b 0 hmi] [xf null nh nn null] nh nn]]]
-                    [let [[node [xbrt-mk t [gbk-sub-key k [- nki hmi] nki] [xf null nh nn] nh nn]]]
-                      [rec_up-bp node [cdr np] xf vf t]]] ]] ] ]]]]
+                    [let [[node [mkx [gbk-sub-key b 0 hmi] [xf null nn nh] nn nh]]]
+                      [rec_up-bp node [cdr np] xf mkx]]
+                    [let [[node [mkx [gbk-sub-key k [- nki hmi] nki] [xf null nh nn] nh nn]]]
+                      [rec_up-bp node [cdr np] xf mkx]]] ]] ] ]]]]
 
 [define [x_get t k d]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
@@ -245,209 +231,42 @@ reexamine/refactor traversal with descent predicate to account for other use cas
         [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]] [xbrt-ext n] d]]]]]
   
   
-[define [rec_mend-bp b x l r nbp xf vf t]
-  [if [equal? [gbk-length b] 0] [let [[node [xbrt-mk t b [xf [vf null x] l r] l r]]] node]
+[define [rec_mend-bp b x l r nbp xf mkx]
+  [if [equal? [gbk-length b] 0] [let [[node [mkx b [xf [xvc-val x] l r] l r]]] node]
     [let* [[h [car nbp]]
            [hb [xbrt-key h]][hext [xbrt-ext h]][hl [xbrt-left h]][hr [xbrt-right h]]
            [s [equal? 0 [gbk-ref b 0]]]]
       [if [null? l]
         [if [null? r]
           [if [null? [xvc-val x]]
-            [if s [rec_mend-bp hb [xf [vf null hext] null hr] null hr [cdr nbp] xf vf t]
-                  [rec_mend-bp hb [xf [vf null hext] hl null] hl null [cdr nbp] xf vf t]]; mend p  000
-            [rec_up-bp [xbrt-mk t b x l r] nbp xf vf t]];mknode rec-up   010
+            [if s [rec_mend-bp hb [xf [xvc-val hext] null hr] null hr [cdr nbp] xf mkx]
+                  [rec_mend-bp hb [xf [xvc-val hext] hl null] hl null [cdr nbp] xf mkx]]; mend p 000
+            [rec_up-bp [mkx b x l r] nbp xf mkx]];mknode rec-up   010
           [if [null? [xvc-val x]]
-            [rec_mend-bp [gbk-cat b [xbrt-key r]] [xbrt-ext r] [xbrt-left r] [xbrt-right r] nbp xf vf t];heal ch & mend p 001
-            [rec_up-bp [xbrt-mk t b x l r] nbp xf vf t]]];mknode rec-up  011
+            [rec_mend-bp [gbk-cat b [xbrt-key r]] [xbrt-ext r] [xbrt-left r] [xbrt-right r] nbp xf mkx];heal ch & mend p 001
+            [rec_up-bp [mkx b x l r] nbp xf mkx]]];mknode rec-up  011
         [if [null? r]
           [if [null? [xvc-val x]]
-            [rec_mend-bp [gbk-cat b [xbrt-key l]] [xbrt-ext l] [xbrt-left l] [xbrt-right l] nbp xf vf t];heal ch & mend p 100
-            [rec_up-bp [xbrt-mk t b x l r] nbp xf vf t]];mknode rec-up   110
+            [rec_mend-bp [gbk-cat b [xbrt-key l]] [xbrt-ext l] [xbrt-left l] [xbrt-right l] nbp xf mkx];heal ch & mend p 100
+            [rec_up-bp [mkx b x l r] nbp xf mkx]];mknode rec-up   110
           [if [null? [xvc-val x]]
-            [rec_up-bp [xbrt-mk t b x l r] nbp xf vf t];mknode rec-up    101
-            [rec_up-bp [xbrt-mk t b x l r] nbp xf vf t]]]];mknode rec-up 111
+            [rec_up-bp [mkx b x l r] nbp xf mkx];mknode rec-up    101
+            [rec_up-bp [mkx b x l r] nbp xf mkx]]]];mknode rec-up 111
       ]]]
 
 
 
-[define [x_del t k xf vf] ;;needs testing
+[define [x_del t k xf mkx] ;;needs testing
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [let [[h [car np]]]
       [let [[b [xbrt-key h]][x [xbrt-ext h]][l [xbrt-left h]][r [xbrt-right h]]]
         [if [< nki kl] t
           [if [< hmi hbl] t
-            [rec_mend-bp b [xf null l r] l r [cdr np] xf vf t]]]]]]]
+            [rec_mend-bp b [xf null l r] l r [cdr np] xf mkx]]]]]]]
 
-
-
-
-#|
-;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[struct extv [val] #:transparent]
-
-[define xf-def [lambda [va l r x]
-  [let [[v [if [null? va]
-             [if [null? x] null [extv-val x]]
-             [if [equal? va 'xbrt_del] null va]]]]
-    [extv v]]]]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[struct xgen extv [tree-stats accum] #:transparent]
-
-
-
-
-
-[define [mk-val-acc-func accf init] [lambda [va x] [if [null? x] [accf va init] [accf va [extv-val x]]]]]
-
-[define val-sum [mk-val-acc-func + 0]]
-[define val-cons [mk-val-acc-func cons null]]
-
-[define [mk-val-port-func portf]
-  [lambda [va x]
-    [if [null? x]
-      [let [[o [portf [car va]]]]
-        [displayln [cdr va] o] o]
-        [begin [displayln [cdr va] [extv-val x]] [extv-val x]]]]]
-
-[define val-file [mk-val-port-func [lambda [x] [open-output-file x #:exists 'replace]]]]
-[define val-file-app [mk-val-port-func [lambda [x] [open-output-file x #:exists 'append]]]]
-
-;****
-[struct tree-stat [ncount vcount node-height key-height] #:transparent]
-[define [xgen-def-stat v l r]
-  [let [[ls [if [null? l] [tree-stat 0 0 0 0] [xgen-tree-stats [xbrt-ext l]]]]
-        [rs [if [null? r] [tree-stat 0 0 0 0] [xgen-tree-stats [xbrt-ext r]]]]
-        [lkl [if [null? l] 0 [gbk-length [xbrt-key l]]]]
-        [rkl [if [null? r] 0 [gbk-length [xbrt-key r]]]]]
-      [tree-stat [+ 1 [tree-stat-ncount ls][tree-stat-ncount rs]]
-              [+ [if [null? v] 0 1] [tree-stat-vcount ls][tree-stat-vcount rs]]
-              [+ 1 [max [tree-stat-node-height ls][tree-stat-node-height rs]]]
-              [max [+ lkl [tree-stat-key-height ls]]
-                   [+ rkl [tree-stat-key-height rs]]]]]]
-
-;****
-[define [xgen-def-acc-func v l r] null]
-
-;****
-[define [mk-xgenf vf sf af]
-  [lambda [va l r x]
-    [let [[v [if [null? va]
-               [if [null? x] null [extv-val x]]
-               [if [equal? va 'xbrt_del] null [vf va x]]]]]
-      [let [[s [sf v l r]]
-            [a [af v l r]]]
-        [xgen v s a]]]]]
-
-[define xgen-def [mk-xgenf val-def xgen-def-stat xgen-def-acc-func]]
-[define xgen-file [mk-xgenf val-file xgen-def-stat xgen-def-acc-func]]
-[define xgen-sum [mk-xgenf val-sum xgen-def-stat xgen-def-acc-func]]
-[define xgen-cons [mk-xgenf val-cons xgen-def-stat xgen-def-acc-func]]
-
-[define [mk-root f] [xbrt [rbk<-bin-char-str ""] [f null null null null] null null]]
-
-
-
-[define [rec-up-bp node nbp xf]
-  [if [equal? [gbk-length [xbrt-key node]] 0] node
-    [let* [[h [car nbp]]
-           [hb [xbrt-key h]][hext [xbrt-ext h]][hl [xbrt-left h]][hr [xbrt-right h]]]
-      [rec-up-bp
-        [if [equal? [gbk-ref [xbrt-key node] 0] 0]
-          [xbrt hb [xf null node hr hext] node hr]
-          [xbrt hb [xf null hl node hext] hl node]]
-        [cdr nbp] xf]
-      ]]]
-
-[define [xset t k v [xf xf-def]]
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [let [[h [car np]]]
-      [let [[b [xbrt-key h]][x [xbrt-ext h]][l [xbrt-left h]][r [xbrt-right h]]]
-          [if [equal? nki kl] 
-            [if [equal? hmi hbl]
-              [let [[node [xbrt b [xf v l r x] l r]]]
-                [rec-up-bp node [cdr np] xf]]
-              [let [[nh [xbrt [gbk-sub-key b hmi hbl] [xf null l r x] l r]]]
-                [if [equal? [gbk-ref b hmi] 0]
-                ;    [let [[node [xbrt [gbk-sub-key b 0 hmi] [xf v nh null null] nh null]]]
-                    [let [[node [xbrt [gbk-sub-key k [- nki hmi] nki] [xf v nh null null] nh null]]]
-                      [rec-up-bp node [cdr np] xf]]
-                    [let [[node [xbrt [gbk-sub-key b 0 hmi] [xf v null nh null] null nh]]]
-                      [rec-up-bp node [cdr np] xf]]]]]
-            [if [equal? hmi hbl]
-              [let [[nn [xbrt [gbk-sub-key k nki kl] [xf v null null null] null null]]]
-                [if [equal? [gbk-ref k nki] 0]
-                    [let [[node [xbrt b [xf null nn r x] nn r]]]
-                      [rec-up-bp node [cdr np] xf]]
-                    [let [[node [xbrt b [xf null l nn x] l nn]]]
-                      [rec-up-bp node [cdr np] xf]]]]
-              [let [[nh [xbrt [gbk-sub-key b hmi hbl] [xf null l r x] l r]]
-                    [nn [xbrt [gbk-sub-key k nki kl] [xf v null null null] null null]]]
-                [if [equal? [gbk-ref k nki] 0]
-                    [let [[node [xbrt [gbk-sub-key b 0 hmi] [xf null nn nh null] nn nh]]]
-                      [rec-up-bp node [cdr np] xf]]
-                 ;   [let [[node [xbrt [gbk-sub-key b 0 hmi] [xf null nh nn null] nh nn]]]
-                    [let [[node [xbrt [gbk-sub-key k [- nki hmi] nki] [xf null nh nn null] nh nn]]]
-                      [rec-up-bp node [cdr np] xf]]] ]] ] ]]]]
-
-[define [xget t k]
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [if [null? np] null
-      [let [[n [car np]]]
-        [if [equal? hmi [gbk-length [xbrt-key n]]] [xbrt-ext n] null]]]]]
-
-[define [xgetv t k]
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [if [null? np] null
-      [let [[n [car np]]]
-        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]] [extv-val [xbrt-ext n]] null]]]]]
-
- 
-[define [rec-mend-bp b x l r nbp xf]
-  [if [equal? [gbk-length b] 0] [let [[node [xbrt b [xf null l r x] l r]]] node]
-    [let* [[h [car nbp]]
-           [hb [xbrt-key h]][hext [xbrt-ext h]][hl [xbrt-left h]][hr [xbrt-right h]]
-           [s [equal? 0 [gbk-ref b 0]]]]
-      [if [null? l]
-        [if [null? r]
-          [if [null? [extv-val x]]
-            [if s [rec-mend-bp hb [xf null null hr hext] null hr [cdr nbp] xf]
-                  [rec-mend-bp hb [xf null hl null hext] hl null [cdr nbp] xf]]; mend p  000
-            [rec-up-bp [xbrt b x l r] nbp xf]];mknode rec-up   010
-          [if [null? [extv-val x]]
-            [rec-mend-bp [gbk-cat b [xbrt-key r]] [xbrt-ext r] [xbrt-left r] [xbrt-right r] nbp xf];heal ch & mend p 001
-            [rec-up-bp [xbrt b x l r] nbp xf]]];mknode rec-up  011
-        [if [null? r]
-          [if [null? [extv-val x]]
-            [rec-mend-bp [gbk-cat b [xbrt-key l]] [xbrt-ext l] [xbrt-left l] [xbrt-right l] nbp xf];heal ch & mend p 100
-            [rec-up-bp [xbrt b x l r] nbp xf]];mknode rec-up   110
-          [if [null? [extv-val x]]
-            [rec-up-bp [xbrt b x l r] nbp xf];mknode rec-up    101
-            [rec-up-bp [xbrt b x l r] nbp xf]]]];mknode rec-up 111
-      ]]]
-
-
-
-
-[define [xdel t k [xf xf-def]] ;;needs testing
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [let [[h [car np]]]
-      [let [[b [xbrt-key h]][x [xbrt-ext h]][l [xbrt-left h]][r [xbrt-right h]]]
-        [if [< nki kl] t
-          [if [< hmi hbl] t
-            [rec-mend-bp b [xf 'xbrt_del l r x] l r [cdr np] xf]]]]]]]
-
-|#
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 [define [xbrt-kfb? n][gbk-ref [xbrt-key n] 0]]
 
 [define [fct-first t cf pxf]
@@ -552,27 +371,14 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;; deque ;;;;;;;;;;;;;;;;;;;;
 [define [mk-deq] void]
 [define [deq-head-push d] void]
 [define [deq-head-pop  d] void]
 [define [deq-tail-push d] void]
 [define [deq-tail-pop  d] void]
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;[define [xbrt=? x y]
-;  [let [[nx [if [null? x] [mk-root xf-def] x]]
-;        [ny [if [null? y] [mk-root xf-def] y]]]
-;    [and [bit-string-equal? [bit-string-pack [xbrt-key nx]] [bit-string-pack [xbrt-key ny]]]
-;         [equal? [xbrt-ext nx] [xbrt-ext ny]]
-;         [xbrt=? [xbrt-left nx] [xbrt-left ny]]
-;         [xbrt=? [xbrt-right nx] [xbrt-right ny]]]]]
 
 [define [nmk-rbs min max]
   [substring [apply string-append [for/list [[k [in-range 0 [add1 [quotient max 16]]]]]
@@ -612,9 +418,5 @@ reexamine/refactor traversal with descent predicate to account for other use cas
       [displayln [xbrt-get-ext [cadr mt] ""]]
       ]]
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
