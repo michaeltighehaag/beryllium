@@ -89,46 +89,36 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   #:methods gen:x_ext
   [[define [xxf s] [lambda [p] [xvc p]]]]]
 
-[define-generics kxf
-  [kx-f kxf p l r]]
-[define-generics vxf
-  [vx-f vxf p l r]]
-[define-generics nxf
-  [nx-f nxf p l r]]
-
-[struct x_key_def  [key_height] #:transparent
-  #:methods gen:kxf
-  [[define [kx-f s p l r]
+[struct x_key_def  [key_height] #:transparent]
+  [define [kx-f p l r]
     [x_key_def [max [if [null? l] 0 [+ [gbk-length [xbrt-key l]]
-                                       [x_key_def-key_height [x_gen-key_x [xbrt-ext l]]]]]
+                                       [x_key_def-key_height [x_def-key_x [xbrt-ext l]]]]]
                     [if [null? r] 0 [+ [gbk-length [xbrt-key r]]
-                                       [x_key_def-key_height [x_gen-key_x [xbrt-ext r]]]]]]]]]]
+                                       [x_key_def-key_height [x_def-key_x [xbrt-ext r]]]]]]]]
 
-[struct x_val_def  [val_count val_cum] #:transparent
-  #:methods gen:vxf
-  [[define [vx-f s p l r]
+[struct x_val_def  [val_count val_cum] #:transparent]
+  [define [vx-f p l r]
     [x_val_def [+ [if [null? p] 0 1]
-                [if [null? l] 0 [x_val_def-val_count [x_gen-val_x [xbrt-ext l]]]]
-                [if [null? r] 0 [x_val_def-val_count [x_gen-val_x [xbrt-ext r]]]]]
-             0]]]]
+                [if [null? l] 0 [x_val_def-val_count [x_def-val_x [xbrt-ext l]]]]
+                [if [null? r] 0 [x_val_def-val_count [x_def-val_x [xbrt-ext r]]]]]
+             0]]
 
-[struct x_node_def [node_count node_height] #:transparent
-  #:methods gen:nxf
-  [[define [nx-f s p l r]
-    [x_node_def [+ 1 [if [null? l] 0 [x_node_def-node_count [x_gen-node_x [xbrt-ext l]]]]
-                     [if [null? r] 0 [x_node_def-node_count [x_gen-node_x [xbrt-ext r]]]]]
-                [+ 1 [max [if [null? l] 0 [x_node_def-node_height [x_gen-node_x [xbrt-ext l]]]]
-                          [if [null? r] 0 [x_node_def-node_height [x_gen-node_x [xbrt-ext r]]]]]]
-                ]]]]
+[struct x_node_def [node_count node_height] #:transparent]
+  [define [nx-f p l r]
+    [x_node_def [+ 1 [if [null? l] 0 [x_node_def-node_count [x_def-node_x [xbrt-ext l]]]]
+                     [if [null? r] 0 [x_node_def-node_count [x_def-node_x [xbrt-ext r]]]]]
+                [+ 1 [max [if [null? l] 0 [x_node_def-node_height [x_def-node_x [xbrt-ext l]]]]
+                          [if [null? r] 0 [x_node_def-node_height [x_def-node_x [xbrt-ext r]]]]]]
+                ]]
 
-[struct x_gen xvc [key_x val_x node_x] #:transparent
+[struct x_def xvc [key_x val_x node_x] #:transparent
   #:methods gen:x_ext
   [[define [xxf s]
      [lambda [p l r] 
-       [let [[kx [kx-f [x_gen-key_x s] p l r]]
-             [vx [vx-f [x_gen-val_x s] p l r]]
-             [nx [nx-f [x_gen-node_x s] p l r]]]
-         [x_gen p kx vx nx]]]]]]
+       [let [[kx [kx-f p l r]]
+             [vx [vx-f p l r]]
+             [nx [nx-f p l r]]]
+         [x_def p kx vx nx]]]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;    define generic xbrt functions   ;;;;;;;;;;;;;;
@@ -156,7 +146,11 @@ reexamine/refactor traversal with descent predicate to account for other use cas
      [x_del t [rbk<-bin-char-str k] [xxf [xbrt-ext t]] [xbrt-mk t]]]
 ]]
 
-[define xbrt_def_root [xbrt_def [rbk<-bin-char-str ""] [x_gen null [x_key_def 0][x_val_def 0 0][x_node_def 0 0]] null null]]
+[define xbrt_def_root
+  [xbrt_def [rbk<-bin-char-str ""]
+              [x_def null [kx-f null null null] [vx-f null null null] [nx-f null null null]]
+              null
+              null]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -323,11 +317,7 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 
 [define [vtf-tst s bp]
   [if [and [equal? s 2] [equal? 5 [gbk-length [cdar bp]]]]
-    [list s [bin-char-str<-gbk [cdar bp]]
-          [x_gen-key_x [xbrt-ext [caar bp]]]
-          [x_gen-val_x [xbrt-ext [caar bp]]]
-          [x_gen-node_x [xbrt-ext [caar bp]]]
-          ]
+    [list s [bin-char-str<-gbk [cdar bp]] [xbrt-ext [caar bp]]]
     [void]]]
   
 [define [pre-val s bp]
