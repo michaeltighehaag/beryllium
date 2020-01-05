@@ -89,27 +89,33 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   #:methods gen:x_ext
   [[define [xxf s] [lambda [p] [xvc p]]]]]
 
-[struct x_key_def  [key_height] #:transparent]
-  [define [kx-f p l r]
-    [x_key_def [max [if [null? l] 0 [+ [gbk-length [xbrt-key l]]
-                                       [x_key_def-key_height [x_def-key_x [xbrt-ext l]]]]]
-                    [if [null? r] 0 [+ [gbk-length [xbrt-key r]]
-                                       [x_key_def-key_height [x_def-key_x [xbrt-ext r]]]]]]]]
+[struct x_key_def  [key_max_height key_min_height] #:transparent]
+[define [kx-f p l r]
+  [x_key_def [max [if [null? l] 0 [+ [gbk-length [xbrt-key l]]
+                                     [x_key_def-key_max_height [x_def-key_x [xbrt-ext l]]]]]
+                  [if [null? r] 0 [+ [gbk-length [xbrt-key r]]
+                                     [x_key_def-key_max_height [x_def-key_x [xbrt-ext r]]]]]]
+             [min [if [null? l] 0 [+ [gbk-length [xbrt-key l]]
+                                     [x_key_def-key_min_height [x_def-key_x [xbrt-ext l]]]]]
+                  [if [null? r] 0 [+ [gbk-length [xbrt-key r]]
+                                     [x_key_def-key_min_height [x_def-key_x [xbrt-ext r]]]]]]]]
 
 [struct x_val_def  [val_count val_cum] #:transparent]
-  [define [vx-f p l r]
-    [x_val_def [+ [if [null? p] 0 1]
-                [if [null? l] 0 [x_val_def-val_count [x_def-val_x [xbrt-ext l]]]]
-                [if [null? r] 0 [x_val_def-val_count [x_def-val_x [xbrt-ext r]]]]]
+[define [vx-f p l r]
+  [x_val_def [+ [if [null? p] 0 1]
+              [if [null? l] 0 [x_val_def-val_count [x_def-val_x [xbrt-ext l]]]]
+              [if [null? r] 0 [x_val_def-val_count [x_def-val_x [xbrt-ext r]]]]]
              0]]
 
-[struct x_node_def [node_count node_height] #:transparent]
-  [define [nx-f p l r]
-    [x_node_def [+ 1 [if [null? l] 0 [x_node_def-node_count [x_def-node_x [xbrt-ext l]]]]
-                     [if [null? r] 0 [x_node_def-node_count [x_def-node_x [xbrt-ext r]]]]]
-                [+ 1 [max [if [null? l] 0 [x_node_def-node_height [x_def-node_x [xbrt-ext l]]]]
-                          [if [null? r] 0 [x_node_def-node_height [x_def-node_x [xbrt-ext r]]]]]]
-                ]]
+[struct x_node_def [node_count node_max_height node_min_height] #:transparent]
+[define [nx-f p l r]
+  [x_node_def [+ 1 [if [null? l] 0 [x_node_def-node_count [x_def-node_x [xbrt-ext l]]]]
+                   [if [null? r] 0 [x_node_def-node_count [x_def-node_x [xbrt-ext r]]]]]
+              [+ 1 [max [if [null? l] 0 [x_node_def-node_max_height [x_def-node_x [xbrt-ext l]]]]
+                        [if [null? r] 0 [x_node_def-node_max_height [x_def-node_x [xbrt-ext r]]]]]]
+              [+ 1 [min [if [null? l] 0 [x_node_def-node_min_height [x_def-node_x [xbrt-ext l]]]]
+                        [if [null? r] 0 [x_node_def-node_min_height [x_def-node_x [xbrt-ext r]]]]]]
+              ]]
 
 [struct x_def xvc [key_x val_x node_x] #:transparent
   #:methods gen:x_ext
@@ -120,7 +126,7 @@ reexamine/refactor traversal with descent predicate to account for other use cas
              [nx [nx-f p l r]]]
          [x_def p kx vx nx]]]]]]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;    define generic xbrt functions   ;;;;;;;;;;;;;;
 
 [define-generics gxbrt
@@ -259,9 +265,37 @@ reexamine/refactor traversal with descent predicate to account for other use cas
             [rec_mend-bp b [xf null l r] l r [cdr np] xf mkx]]]]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [xbrt-kfb? n][gbk-ref [xbrt-key n] 0]]
+
 
 [define [fct-first t cf pxf]
   [if [cf t null]
@@ -307,6 +341,7 @@ reexamine/refactor traversal with descent predicate to account for other use cas
           [cons 1 [cdr bp]]
           [cons 2 [cdr bp]]]]]]]
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [tdp-def n bp] #f]
@@ -326,8 +361,8 @@ reexamine/refactor traversal with descent predicate to account for other use cas
       [if [null? v] [void] [list [cdr v]]]]
     [void]]]
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -361,6 +396,124 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[struct xbrz [back node zx] #:transparent]
+
+[struct tz [head state tx] #:transparent]
+
+
+[define [xbrz-first t cf pxf]
+  [tz [xbrz null t null] 'pre null]]
+
+[define [xbrz-next z cf pxf]
+  [let [[h [tz-head z]][s [tz-state z]]]
+    [if [equal? 'pre s]
+      [let [[l [xbrt-left [xbrz-node h]]]]
+        [if [or [null? l] [cf l z]]
+          [tz h 'int null]
+          [tz [xbrz h l null] 'pre null]]]
+      [if [equal? 'int s]
+        [let [[r [xbrt-right [xbrz-node h]]]] 
+          [if [or [null? r] [cf r z]]
+            [tz h 'pst null]
+            [tz [xbrz h r null] 'pre null]]]        
+        [if [null? [xbrz-back [tz-head z]]]
+          [begin [displayln "reached?"] null]
+          [if [equal? 0 [xbrt-kfb? [xbrz-node h]]]
+            [tz [xbrz-back [tz-head z]] 'int null] 
+            [tz [xbrz-back [tz-head z]] 'pst null]]]]]]] 
+
+[define [xbrz-last t cf pxf]
+  [tz [xbrz null t null] 'pst null]]
+[define [xbrz-prev z cf pxf]
+  [let [[h [tz-head z]][s [tz-state z]]]
+    [if [equal? 'pst s]
+      [let [[r [xbrt-right [xbrz-node h]]]]
+        [if [or [null? r] [cf r z]]
+          [tz h 'int null]
+          [tz [xbrz h r null] 'pst null]]]
+      [if [equal? 'int s]
+        [let [[l [xbrt-left [xbrz-node h]]]] 
+          [if [or [null? l] [cf l z]]
+            [tz h 'pre null]
+            [tz [xbrz h l null] 'pst null]]]        
+        [if [null? [xbrz-back [tz-head z]]]
+          [begin [displayln "reached?"] null]
+          [if [equal? 1 [xbrt-kfb? [xbrz-node h]]]
+            [tz [xbrz-back [tz-head z]] 'int null] 
+            [tz [xbrz-back [tz-head z]] 'pre null]]]]]]] 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [xbrz-tdp-def n z] #f]
+[define [xbrz-tpf-def n bp] [if [null? bp] [xbrt-key n][gbk-cat [cdar bp][xbrt-key n]]]]
+[define [xbrz-vtf-def z] [list [tz-state z] [xvc-val [xbrt-ext [xbrz-node [tz-head z]]]]]];[list s [bin-char-str<-gbk [cdar bp]] [xvc-val [xbrt-ext [caar bp]]]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [stream<-xbrtz t #:tdp [tdp xbrz-tdp-def] #:tpf [tpf xbrz-tpf-def] #:vtf [vtf xbrz-vtf-def]]
+  [stream-filter [lambda [x] [not [void? x]]]
+    [stream-unfold
+      [lambda [x] [vtf x]]
+      [lambda [x] [not [null? x]]]
+      [lambda [x] [xbrz-next x tdp tpf]]
+      [xbrz-first t tdp tpf]]]]
+[define [stream<-xbrtz-rev t #:tdp [tdp xbrz-tdp-def] #:tpf [tpf xbrz-tpf-def] #:vtf [vtf xbrz-vtf-def]]
+  [stream-filter [lambda [x] [not [void? x]]]
+    [stream-unfold
+      [lambda [x] [vtf x]]
+      [lambda [x] [not [null? x]]]
+      [lambda [x] [xbrz-prev x tdp tpf]]
+      [xbrz-last t tdp tpf]]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ;;;;;;;;;;;;;;;;; deque ;;;;;;;;;;;;;;;;;;;;
 [define [mk-deq] void]
 [define [deq-head-push d] void]
@@ -406,6 +559,9 @@ reexamine/refactor traversal with descent predicate to account for other use cas
       [disp-stream [stream<-xbrt [car mt] #:tdp tdp-tst #:vtf vtf-tst]]
       [displayln [xbrt-get-ext [car mt] ""]]
       [displayln [xbrt-get-ext [cadr mt] ""]]
+
+      [disp-stream [stream-take 200 [stream<-xbrtz [car mt]]]]
+      [disp-stream [stream-take 200 [stream<-xbrtz-rev [car mt]]]]
       ]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
