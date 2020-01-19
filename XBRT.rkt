@@ -87,9 +87,9 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [define-generics xbrt_gnx
   [xxf xbrt_gnx]]
 
-[struct gnx_nul [] #:transparent
+[struct gnx_null [] #:transparent
   #:methods gen:xbrt_gnx
-  [[define [xxf s] [lambda [p] [gnx_nul]]]]]
+  [[define [xxf s] [lambda [p] [gnx_null]]]]]
 
 [struct x_key_def  [key_max_height key_min_height] #:transparent]
 [define [kx-f p l r]
@@ -161,6 +161,46 @@ reexamine/refactor traversal with descent predicate to account for other use cas
          [xn [nx-f null null null]]
          [x [gnx_def xk xv xn]]]
     [xbrt_def b null x null null]]]
+
+
+;;;;;;;;;;;;;;;;  cons  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct xbrt_cons xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_cons k v x l r]]]
+   [define [xbrt-set t k v]
+     [x_set t [rbk<-bin-char-str k] [cons k v] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]]
+   [define [xbrt-get-gnx t k]
+     [x_get-gnx t [rbk<-bin-char-str k] null]]
+   [define [xbrt-get t k]
+      [x_get t [rbk<-bin-char-str k] null]];]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-bin-char-str k] [xxf [xbrt-gnx t]] [xbrt-mk t]]]
+]]
+
+[define xbrt_cons_root
+  [let* [[b [rbk<-bin-char-str ""]]
+         [x [gnx_null]]]
+    [xbrt_cons b null x null null]]]
+
+
+;;;;;;;;;;;;;;;;  file append  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct xbrt_file_app xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_file_app k v x l r]]]
+   [define [xbrt-set t k v]
+     [x_set t [rbk<-bin-char-str k] [cons k v] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]]
+   [define [xbrt-get-gnx t k]
+     [x_get-gnx t [rbk<-bin-char-str k] null]]
+   [define [xbrt-get t k]
+      [x_get t [rbk<-bin-char-str k] null]];]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-bin-char-str k] [xxf [xbrt-gnx t]] [xbrt-mk t]]]
+]]
+
+[define xbrt_file_app_root
+  [let* [[b [rbk<-bin-char-str ""]]
+         [x [gnx_null]]]
+    [xbrt_file_app b null x null null]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -284,28 +324,28 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [struct tz [head state zx] #:transparent]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[define-generics gzx
-  [zx-set gzx nn]
+[define-generics gnx
+  [nx-set gnx nn]
 ]
 
-[struct zx_def [key_depth] #:transparent
-  #:methods gen:gzx
-  [[define [zx-set gzx node]
-     [zx_def [+ [gbk-length [xbrt-key node]] [zx_def-key_depth gzx]]]]
+[struct nx_def [key_depth] #:transparent
+  #:methods gen:gnx
+  [[define [nx-set gnx node]
+     [nx_def [+ [gbk-length [xbrt-key node]] [nx_def-key_depth gnx]]]]
   ]]
  
-[define-generics gtx
-  [tx-set gtx z s]
+[define-generics gzx
+  [tx-set gzx z s]
 ]
 
-[struct tx_def [count_val] #:transparent
-  #:methods gen:gtx
-  [[define [tx-set gtx z s] [tx_def [add1 [tx_def-count_val gtx]]]]
+[struct zx_def [count_val] #:transparent
+  #:methods gen:gzx
+  [[define [tx-set gzx z s] [zx_def [add1 [zx_def-count_val gzx]]]]
   ]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [xbrz-first t cf]
-  [tz [xbrz null t [zx_def 0]] 'pre [tx_def 1]]]
+  [tz [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
 
 [define [xbrz-next z cf]
   [let [[h [tz-head z]]
@@ -315,12 +355,12 @@ reexamine/refactor traversal with descent predicate to account for other use cas
       [let [[l [xbrt-left [xbrz-node h]]]]
         [if [or [null? l] [cf l z]]
           [tz h 'int [tx-set x z 'int]]
-          [tz [xbrz h l [zx-set [xbrz-nx h] l]] 'pre [tx-set x z 'pre]]]] 
+          [tz [xbrz h l [nx-set [xbrz-nx h] l]] 'pre [tx-set x z 'pre]]]] 
       [if [equal? 'int s]
         [let [[r [xbrt-right [xbrz-node h]]]] 
           [if [or [null? r] [cf r z]]
             [tz h 'pst [tx-set x z 'pst]]
-            [tz [xbrz h r [zx-set [xbrz-nx h] r]] 'pre [tx-set x z 'pre]]]]    
+            [tz [xbrz h r [nx-set [xbrz-nx h] r]] 'pre [tx-set x z 'pre]]]]    
         [if [null? [xbrz-back [tz-head z]]]
           null
           [if [equal? 0 [xbrt-kfb? [xbrz-node h]]]
@@ -328,7 +368,7 @@ reexamine/refactor traversal with descent predicate to account for other use cas
             [tz [xbrz-back [tz-head z]] 'pst [tx-set x z 'pst]]]]]]]] 
 
 [define [xbrz-last t cf]
-  [tz [xbrz null t [zx_def 0]] 'pst [tx_def 1]]]
+  [tz [xbrz null t [nx_def 0]] 'pst [zx_def 1]]]
 
 [define [xbrz-prev z cf]
   [let [[h [tz-head z]]
@@ -338,12 +378,12 @@ reexamine/refactor traversal with descent predicate to account for other use cas
       [let [[r [xbrt-right [xbrz-node h]]]]
         [if [or [null? r] [cf r z]]
           [tz h 'int [tx-set x z 'int]]
-          [tz [xbrz h r [zx-set [xbrz-nx h] r]] 'pst [tx-set x z 'pst]]]] 
+          [tz [xbrz h r [nx-set [xbrz-nx h] r]] 'pst [tx-set x z 'pst]]]] 
       [if [equal? 'int s]
         [let [[l [xbrt-left [xbrz-node h]]]] 
           [if [or [null? l] [cf l z]]
             [tz h 'pre [tx-set x z 'pre]]
-            [tz [xbrz h l [zx-set [xbrz-nx h] l]] 'pst [tx-set x z 'pst]]]]    
+            [tz [xbrz h l [nx-set [xbrz-nx h] l]] 'pst [tx-set x z 'pst]]]]    
         [if [null? [xbrz-back [tz-head z]]]
           null
           [if [equal? 1 [xbrt-kfb? [xbrz-node h]]]
@@ -353,18 +393,18 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [xbrz_tdp_def n z] #f]
-[define [xbrz_tdp_tst n z] [< 5 [zx_def-key_depth [xbrz-nx [tz-head z]]]]]
+[define [xbrz_tdp_tst n z] [< 5 [nx_def-key_depth [xbrz-nx [tz-head z]]]]]
 
 [define [mhcctf x y] [if [equal? x y] #t #f]]
 
 [define [xbrz_vtf_def z]
   [list [tz-state z]
-        [zx_def-key_depth [xbrz-nx [tz-head z]]]
-        [tx_def-count_val [tz-zx z]]
+        [nx_def-key_depth [xbrz-nx [tz-head z]]]
+        [zx_def-count_val [tz-zx z]]
         [xbrt-val [xbrz-node [tz-head z]]]
         ]]
 [define [xbrz_vtf_tst z]
-  [if [and [equal? [tz-state z] 'int] [equal? 5 [zx_def-key_depth [xbrz-nx [tz-head z]]]]] 
+  [if [and [equal? [tz-state z] 'int] [equal? 5 [nx_def-key_depth [xbrz-nx [tz-head z]]]]] 
     [list [tz-state z] [xbrt-gnx [xbrz-node [tz-head z]]]] 
     [void]]]
 [define [xbrz_vtf_val z]
