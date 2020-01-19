@@ -87,46 +87,46 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [define-generics xbrt_gnx
   [xxf xbrt_gnx]]
 
-[struct xvc [] #:transparent
+[struct gnx_nul [] #:transparent
   #:methods gen:xbrt_gnx
-  [[define [xxf s] [lambda [p] [xvc]]]]]
+  [[define [xxf s] [lambda [p] [gnx_nul]]]]]
 
 [struct x_key_def  [key_max_height key_min_height] #:transparent]
 [define [kx-f p l r]
   [x_key_def [max [if [null? l] 0 [+ [gbk-length [xbrt-key l]]
-                                     [x_key_def-key_max_height [x_def-key_x [xbrt-gnx l]]]]]
+                                     [x_key_def-key_max_height [gnx_def-key_x [xbrt-gnx l]]]]]
                   [if [null? r] 0 [+ [gbk-length [xbrt-key r]]
-                                     [x_key_def-key_max_height [x_def-key_x [xbrt-gnx r]]]]]]
+                                     [x_key_def-key_max_height [gnx_def-key_x [xbrt-gnx r]]]]]]
              [min [if [null? l] 0 [+ [gbk-length [xbrt-key l]]
-                                     [x_key_def-key_min_height [x_def-key_x [xbrt-gnx l]]]]]
+                                     [x_key_def-key_min_height [gnx_def-key_x [xbrt-gnx l]]]]]
                   [if [null? r] 0 [+ [gbk-length [xbrt-key r]]
-                                     [x_key_def-key_min_height [x_def-key_x [xbrt-gnx r]]]]]]]]
+                                     [x_key_def-key_min_height [gnx_def-key_x [xbrt-gnx r]]]]]]]]
 
 [struct x_val_def  [val_count val_cum] #:transparent]
 [define [vx-f p l r]
   [x_val_def [+ [if [null? p] 0 1]
-              [if [null? l] 0 [x_val_def-val_count [x_def-val_x [xbrt-gnx l]]]]
-              [if [null? r] 0 [x_val_def-val_count [x_def-val_x [xbrt-gnx r]]]]]
+              [if [null? l] 0 [x_val_def-val_count [gnx_def-val_x [xbrt-gnx l]]]]
+              [if [null? r] 0 [x_val_def-val_count [gnx_def-val_x [xbrt-gnx r]]]]]
              0]]
 
 [struct x_node_def [node_count node_max_height node_min_height] #:transparent]
 [define [nx-f p l r]
-  [x_node_def [+ 1 [if [null? l] 0 [x_node_def-node_count [x_def-node_x [xbrt-gnx l]]]]
-                   [if [null? r] 0 [x_node_def-node_count [x_def-node_x [xbrt-gnx r]]]]]
-              [+ 1 [max [if [null? l] 0 [x_node_def-node_max_height [x_def-node_x [xbrt-gnx l]]]]
-                        [if [null? r] 0 [x_node_def-node_max_height [x_def-node_x [xbrt-gnx r]]]]]]
-              [+ 1 [min [if [null? l] 0 [x_node_def-node_min_height [x_def-node_x [xbrt-gnx l]]]]
-                        [if [null? r] 0 [x_node_def-node_min_height [x_def-node_x [xbrt-gnx r]]]]]]
+  [x_node_def [+ 1 [if [null? l] 0 [x_node_def-node_count [gnx_def-node_x [xbrt-gnx l]]]]
+                   [if [null? r] 0 [x_node_def-node_count [gnx_def-node_x [xbrt-gnx r]]]]]
+              [+ 1 [max [if [null? l] 0 [x_node_def-node_max_height [gnx_def-node_x [xbrt-gnx l]]]]
+                        [if [null? r] 0 [x_node_def-node_max_height [gnx_def-node_x [xbrt-gnx r]]]]]]
+              [+ 1 [min [if [null? l] 0 [x_node_def-node_min_height [gnx_def-node_x [xbrt-gnx l]]]]
+                        [if [null? r] 0 [x_node_def-node_min_height [gnx_def-node_x [xbrt-gnx r]]]]]]
               ]]
 
-[struct x_def [key_x val_x node_x] #:transparent
+[struct gnx_def [key_x val_x node_x] #:transparent
   #:methods gen:xbrt_gnx
   [[define [xxf s]
      [lambda [p l r] 
        [let [[kx [kx-f p l r]]
              [vx [vx-f p l r]]
              [nx [nx-f p l r]]]
-         [x_def  kx vx nx]]]]]]
+         [gnx_def  kx vx nx]]]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;    define generic xbrt functions   ;;;;;;;;;;;;;;
@@ -149,19 +149,19 @@ reexamine/refactor traversal with descent predicate to account for other use cas
    [define [xbrt-get-gnx t k]
      [x_get-gnx t [rbk<-bin-char-str k] null]]
    [define [xbrt-get t k]
-     ;[xvc-val
       [x_get t [rbk<-bin-char-str k] null]];]
    [define [xbrt-del t k]
      [x_del t [rbk<-bin-char-str k] [xxf [xbrt-gnx t]] [xbrt-mk t]]]
 ]]
 
 [define xbrt_def_root
-  [xbrt_def [rbk<-bin-char-str ""] null
-              [x_def [kx-f null null null] [vx-f null null null] [nx-f null null null]]
-              null
-              null]]
+  [let* [[b [rbk<-bin-char-str ""]]
+         [xk [kx-f null null null]]
+         [xv [vx-f null null null]]
+         [xn [nx-f null null null]]
+         [x [gnx_def xk xv xn]]]
+    [xbrt_def b null x null null]]]
 
-[define tnull null]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [qk t k] ;[values nki kl hmi hbl np]
@@ -183,9 +183,10 @@ reexamine/refactor traversal with descent predicate to account for other use cas
         [values nki kl hmi hbl np]]]]]
 
 [define [rec_up-bp node nbp xf mkx]
-  [if [equal? [gbk-length [xbrt-key node]] 0] node
+  [if [equal? [gbk-length [xbrt-key node]] 0];[null? nbp]
+      node
     [let* [[h [car nbp]]
-           [hb [xbrt-key h]] [hv [xbrt-val h]] ;[hv [xvc-val [xbrt-gnx h]]]
+           [hb [xbrt-key h]] [hv [xbrt-val h]] 
            [hext [xbrt-gnx h]][hl [xbrt-left h]][hr [xbrt-right h]]]
       [rec_up-bp
         [if [equal? [gbk-ref [xbrt-key node] 0] 0]
@@ -197,14 +198,12 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [define [x_set t k v xf vf mkx]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [let [[h [car np]]]
-      [let [[b [xbrt-key h]] [hv [xbrt-val h]] ;[hv [xvc-val [xbrt-gnx h]]]
-                             [x [xbrt-gnx h]][l [xbrt-left h]][r [xbrt-right h]]]
+      [let [[b [xbrt-key h]] [hv [xbrt-val h]] [x [xbrt-gnx h]][l [xbrt-left h]][r [xbrt-right h]]]
           [if [equal? nki kl] 
             [if [equal? hmi hbl]
               [let* [[mnvc [vf v x]][node [mkx b mnvc [xf mnvc l r] l r]]]
                 [rec_up-bp node [cdr np] xf mkx]]
-              [let [[nh [mkx [gbk-sub-key b hmi hbl] hv [xf hv ;[xvc-val x]
-                                                            l r] l r]]]
+              [let [[nh [mkx [gbk-sub-key b hmi hbl] hv [xf hv l r] l r]]]
                 [if [equal? [gbk-ref b hmi] 0]
                     [let [[node [mkx [gbk-sub-key k [- nki hmi] nki] v [xf v nh null] nh null]]]
                       [rec_up-bp node [cdr np] xf mkx]]
@@ -213,14 +212,11 @@ reexamine/refactor traversal with descent predicate to account for other use cas
             [if [equal? hmi hbl]
               [let [[nn [mkx [gbk-sub-key k nki kl] v [xf v null null] null null]]]
                 [if [equal? [gbk-ref k nki] 0]
-                    [let [[node [mkx b hv [xf hv ;[xvc-val x]
-                                              nn r] nn r]]]
+                    [let [[node [mkx b hv [xf hv nn r] nn r]]]
                       [rec_up-bp node [cdr np] xf mkx]]
-                    [let [[node [mkx b hv [xf hv ;[xvc-val x]
-                                              l nn] l nn]]]
+                    [let [[node [mkx b hv [xf hv l nn] l nn]]]
                       [rec_up-bp node [cdr np] xf mkx]]]]
-              [let [[nh [mkx [gbk-sub-key b hmi hbl] hv [xf hv ;[xvc-val x]
-                                                            l r] l r]]
+              [let [[nh [mkx [gbk-sub-key b hmi hbl] hv [xf hv l r] l r]]
                     [nn [mkx [gbk-sub-key k nki kl] v [xf v null null] null null]]]
                 [if [equal? [gbk-ref k nki] 0]
                     [let [[node [mkx [gbk-sub-key b 0 hmi] null [xf null nn nh] nn nh]]]
@@ -232,8 +228,9 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [if [null? np] d
       [let [[n [car np]]]
-        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]] [xbrt-val n];[xvc-val [xbrt-gnx n]]
-            d]]]]]
+        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]]
+          [xbrt-val n]
+          d]]]]]
 
 [define [x_get-gnx t k d]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
@@ -243,37 +240,31 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   
   
 [define [rec_mend-bp b mnvc x l r nbp xf mkx]
-;  [let [[mnvc [xvc-val x]]]
-  [if [equal? [gbk-length b] 0]
-    [let [[node [mkx b mnvc [xf mnvc ;[xvc-val x]
-                                l r] l r]]] node]
+  [if [equal? [gbk-length b] 0] ;[null? nbp]
+    [let [[node [mkx b mnvc [xf mnvc l r] l r]]] node]
     [let* [[h [car nbp]]
            [hb [xbrt-key h]][hv [xbrt-val h]][hext [xbrt-gnx h]][hl [xbrt-left h]][hr [xbrt-right h]]
            [s [equal? 0 [gbk-ref b 0]]]]
       [if [null? l]
         [if [null? r]
-          [if [null? mnvc ;[xvc-val x]
-                     ]
+          [if [null? mnvc ]
             [if s [rec_mend-bp hb hv [xf hv null hr] null hr [cdr nbp] xf mkx]
                   [rec_mend-bp hb hv [xf hv hl null] hl null [cdr nbp] xf mkx]]; mend p 000
             [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]];mknode rec-up   010
-          [if [null? mnvc ;[xvc-val x]
-                     ]
+          [if [null? mnvc]
             [rec_mend-bp [gbk-cat b [xbrt-key r]]
                          [xbrt-val r] [xbrt-gnx r] [xbrt-left r] [xbrt-right r] nbp xf mkx];heal ch & mend p 001
             [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]]];mknode rec-up  011
         [if [null? r]
-          [if [null? mnvc ;[xvc-val x]
-                     ]
+          [if [null? mnvc]
             [rec_mend-bp [gbk-cat b [xbrt-key l]]
                          [xbrt-val l] [xbrt-gnx l] [xbrt-left l] [xbrt-right l] nbp xf mkx];heal ch & mend p 100
             [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]];mknode rec-up   110
-          [if [null? mnvc ;[xvc-val x]
-                     ]
+          [if [null? mnvc]
             [rec_up-bp [mkx b mnvc x l r] nbp xf mkx];mknode rec-up    101
             [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]]]];mknode rec-up 111
       ]]]
-;]
+
 
 
 
@@ -288,9 +279,9 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[struct xbrz [back node zx] #:transparent]
+[struct xbrz [back node nx] #:transparent]
 
-[struct tz [head state tx] #:transparent]
+[struct tz [head state zx] #:transparent]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define-generics gzx
@@ -319,17 +310,17 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [define [xbrz-next z cf]
   [let [[h [tz-head z]]
         [s [tz-state z]]
-        [x [tz-tx z]]]
+        [x [tz-zx z]]]
     [if [equal? 'pre s]
       [let [[l [xbrt-left [xbrz-node h]]]]
         [if [or [null? l] [cf l z]]
           [tz h 'int [tx-set x z 'int]]
-          [tz [xbrz h l [zx-set [xbrz-zx h] l]] 'pre [tx-set x z 'pre]]]] 
+          [tz [xbrz h l [zx-set [xbrz-nx h] l]] 'pre [tx-set x z 'pre]]]] 
       [if [equal? 'int s]
         [let [[r [xbrt-right [xbrz-node h]]]] 
           [if [or [null? r] [cf r z]]
             [tz h 'pst [tx-set x z 'pst]]
-            [tz [xbrz h r [zx-set [xbrz-zx h] r]] 'pre [tx-set x z 'pre]]]]    
+            [tz [xbrz h r [zx-set [xbrz-nx h] r]] 'pre [tx-set x z 'pre]]]]    
         [if [null? [xbrz-back [tz-head z]]]
           null
           [if [equal? 0 [xbrt-kfb? [xbrz-node h]]]
@@ -342,17 +333,17 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [define [xbrz-prev z cf]
   [let [[h [tz-head z]]
         [s [tz-state z]]
-        [x [tz-tx z]]]
+        [x [tz-zx z]]]
     [if [equal? 'pst s]
       [let [[r [xbrt-right [xbrz-node h]]]]
         [if [or [null? r] [cf r z]]
           [tz h 'int [tx-set x z 'int]]
-          [tz [xbrz h r [zx-set [xbrz-zx h] r]] 'pst [tx-set x z 'pst]]]] 
+          [tz [xbrz h r [zx-set [xbrz-nx h] r]] 'pst [tx-set x z 'pst]]]] 
       [if [equal? 'int s]
         [let [[l [xbrt-left [xbrz-node h]]]] 
           [if [or [null? l] [cf l z]]
             [tz h 'pre [tx-set x z 'pre]]
-            [tz [xbrz h l [zx-set [xbrz-zx h] l]] 'pst [tx-set x z 'pst]]]]    
+            [tz [xbrz h l [zx-set [xbrz-nx h] l]] 'pst [tx-set x z 'pst]]]]    
         [if [null? [xbrz-back [tz-head z]]]
           null
           [if [equal? 1 [xbrt-kfb? [xbrz-node h]]]
@@ -362,27 +353,23 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [xbrz_tdp_def n z] #f]
-[define [xbrz_tdp_tst n z] [< 5 [zx_def-key_depth [xbrz-zx [tz-head z]]]]]
+[define [xbrz_tdp_tst n z] [< 5 [zx_def-key_depth [xbrz-nx [tz-head z]]]]]
 
 [define [mhcctf x y] [if [equal? x y] #t #f]]
 
 [define [xbrz_vtf_def z]
   [list [tz-state z]
-        [zx_def-key_depth [xbrz-zx [tz-head z]]]
-        [tx_def-count_val [tz-tx z]]
+        [zx_def-key_depth [xbrz-nx [tz-head z]]]
+        [tx_def-count_val [tz-zx z]]
         [xbrt-val [xbrz-node [tz-head z]]]
-;        [xvc-val [xbrt-gnx [xbrz-node [tz-head z]]]]
-;        [mhcctf [xvc-val [xbrt-gnx [xbrz-node [tz-head z]]]]
-;                [xbrt-val [xbrz-node [tz-head z]]]]
         ]]
 [define [xbrz_vtf_tst z]
-  [if [and [equal? [tz-state z] 'int] [equal? 5 [zx_def-key_depth [xbrz-zx [tz-head z]]]]] 
+  [if [and [equal? [tz-state z] 'int] [equal? 5 [zx_def-key_depth [xbrz-nx [tz-head z]]]]] 
     [list [tz-state z] [xbrt-gnx [xbrz-node [tz-head z]]]] 
     [void]]]
 [define [xbrz_vtf_val z]
   [if [equal? [tz-state z] 'pre]
     [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
-           ;[xvc-val [xbrt-gnx [xbrz-node [tz-head z]]]]]]
       [if [null? v] [void] [list [cdr v]]]]
     [void]]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
