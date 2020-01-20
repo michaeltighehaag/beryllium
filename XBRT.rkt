@@ -89,7 +89,7 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 
 [struct gnx_null [] #:transparent
   #:methods gen:xbrt_gnx
-  [[define [xxf s] [lambda [p] [gnx_null]]]]]
+  [[define [xxf s] [lambda [p l r] [gnx_null]]]]]
 
 [struct x_key_def  [key_max_height key_min_height] #:transparent]
 [define [kx-f p l r]
@@ -168,13 +168,16 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   #:methods gen:gxbrt
   [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_cons k v x l r]]]
    [define [xbrt-set t k v]
-     [x_set t [rbk<-bin-char-str k] [cons k v] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]]
+     [let [[pv [xbrt-get t k]]]
+       [if [null? pv]
+       [x_set t [rbk<-string k] [list k v] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]
+       [x_set t [rbk<-string k] [cons k [cons v [cdr pv]]] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]]]]
    [define [xbrt-get-gnx t k]
-     [x_get-gnx t [rbk<-bin-char-str k] null]]
+     [x_get-gnx t [rbk<-string k] null]]
    [define [xbrt-get t k]
-      [x_get t [rbk<-bin-char-str k] null]];]
+      [x_get t [rbk<-string k] null]];]
    [define [xbrt-del t k]
-     [x_del t [rbk<-bin-char-str k] [xxf [xbrt-gnx t]] [xbrt-mk t]]]
+     [x_del t [rbk<-string k] [xxf [xbrt-gnx t]] [xbrt-mk t]]]
 ]]
 
 [define xbrt_cons_root
@@ -412,6 +415,11 @@ reexamine/refactor traversal with descent predicate to account for other use cas
     [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
       [if [null? v] [void] [list [cdr v]]]]
     [void]]]
+[define [xbrz_vtf_main z]
+  [if [equal? [tz-state z] 'pre]
+    [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
+      [if [null? v] [void] v]]
+    [void]]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -443,12 +451,10 @@ reexamine/refactor traversal with descent predicate to account for other use cas
       [rec-set [xbrt-set t e [cat "" e]] [cdr l]]]]]
 
 
-[define [xbrt<-stream kf vf xf s]
-  [xbrt<-stream-rec xbrt_def_root kf vf xf s]]
-[define [xbrt<-stream-rec t kf vf xf s]
+[define [xbrt<-stream t s]
   [if [stream-null? s] t
     [let [[e [stream-car s]]]
-      [xbrt<-stream-rec [xbrt-set t [kf e] [vf e]] kf vf [stream-cdr s]]]]]
+      [xbrt<-stream [xbrt-set t [car e] [cdr e]] [stream-cdr s]]]]]
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
