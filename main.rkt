@@ -82,9 +82,9 @@
       [stream<-xbrt #:vtf xbrz_vtf_main spider-test-pool]]
     [disp-stream
       ;[stream-map [lambda [x] [stream<-xbrt #:vtf xbrz_vtf_main x]]
-     [stream-take 20 [spider-group spider-test-pool mqt
-                   [stream-map car [stream<-xbrt #:vtf xbrz_vtf_main spider-test-pool]]] ]
-     ]
+     ; [spider-group spider-test-pool mqt
+                   [stream-map car [stream<-xbrt #:vtf xbrz_vtf_main spider-test-pool]]] ;]
+     
       ;]
   ]]
 

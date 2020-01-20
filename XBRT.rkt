@@ -169,9 +169,10 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_cons k v x l r]]]
    [define [xbrt-set t k v]
      [let [[pv [xbrt-get t k]]]
-       [if [null? pv]
-       [x_set t [rbk<-string k] [list k v] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]
-       [x_set t [rbk<-string k] [cons k [cons v [cdr pv]]] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]]]]
+       ;[if [null? pv]
+       ;[x_set t [rbk<-string k] [list k v] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]
+       [x_set t [rbk<-string k] [cons k pv] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]
+     ]]
    [define [xbrt-get-gnx t k]
      [x_get-gnx t [rbk<-string k] null]]
    [define [xbrt-get t k]
@@ -418,7 +419,7 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [define [xbrz_vtf_main z]
   [if [equal? [tz-state z] 'pre]
     [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
-      [if [null? v] [void] v]]
+      [if [null? v] [void] [cons [string<-rbk [xbrt-key [xbrz-node [tz-head z]]]] v]]]
     [void]]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
