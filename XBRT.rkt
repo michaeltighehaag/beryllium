@@ -85,11 +85,11 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 [define [xbrt-kfb? n][gbk-ref [xbrt-key n] 0]]
 
 [define-generics xbrt_gnx
-  [xxf xbrt_gnx]]
+  [mk_xbrt_xf xbrt_gnx]]
 
 [struct gnx_null [] #:transparent
   #:methods gen:xbrt_gnx
-  [[define [xxf s] [lambda [p l r] [gnx_null]]]]]
+  [[define [mk_xbrt_xf s] [lambda [p l r] [gnx_null]]]]]
 
 [struct x_key_def  [key_max_height key_min_height] #:transparent]
 [define [kx-f p l r]
@@ -121,7 +121,7 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 
 [struct gnx_def [key_x val_x node_x] #:transparent
   #:methods gen:xbrt_gnx
-  [[define [xxf s]
+  [[define [mk_xbrt_xf s]
      [lambda [p l r] 
        [let [[kx [kx-f p l r]]
              [vx [vx-f p l r]]
@@ -145,13 +145,13 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   #:methods gen:gxbrt
   [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_def k v x l r]]]
    [define [xbrt-set t k v]
-     [x_set t [rbk<-bin-char-str k] [cons k v] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]]
+     [x_set t [rbk<-bin-char-str k] [cons k v] [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]]
    [define [xbrt-get-gnx t k]
      [x_get-gnx t [rbk<-bin-char-str k] null]]
    [define [xbrt-get t k]
       [x_get t [rbk<-bin-char-str k] null]];]
    [define [xbrt-del t k]
-     [x_del t [rbk<-bin-char-str k] [xxf [xbrt-gnx t]] [xbrt-mk t]]]
+     [x_del t [rbk<-bin-char-str k] [mk_xbrt_xf [xbrt-gnx t]] [xbrt-mk t]]]
 ]]
 
 [define xbrt_def_root
@@ -170,15 +170,15 @@ reexamine/refactor traversal with descent predicate to account for other use cas
    [define [xbrt-set t k v]
      [let [[pv [xbrt-get t k]]]
        ;[if [null? pv]
-       ;[x_set t [rbk<-string k] [list k v] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]
-       [x_set t [rbk<-string k] [cons v pv] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]
+       ;[x_set t [rbk<-string k] [list k v] [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]
+       [x_set t [rbk<-string k] [cons v pv] [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]
      ]]
    [define [xbrt-get-gnx t k]
      [x_get-gnx t [rbk<-string k] null]]
    [define [xbrt-get t k]
       [x_get t [rbk<-string k] null]];]
    [define [xbrt-del t k]
-     [x_del t [rbk<-string k] [xxf [xbrt-gnx t]] [xbrt-mk t]]]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] [xbrt-mk t]]]
 ]]
 
 [define xbrt_cons_root
@@ -191,14 +191,14 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   #:methods gen:gxbrt
   [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_mdef k v x l r]]]
    [define [xbrt-set t k v]
-       [x_set t [rbk<-string k] v [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]
+       [x_set t [rbk<-string k] v [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]
      ]
    [define [xbrt-get-gnx t k]
      [x_get-gnx t [rbk<-string k] null]]
    [define [xbrt-get t k]
       [x_get t [rbk<-string k] null]];]
    [define [xbrt-del t k]
-     [x_del t [rbk<-string k] [xxf [xbrt-gnx t]] [xbrt-mk t]]]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] [xbrt-mk t]]]
 ]]
 
 [define xbrt_mdef_root
@@ -213,13 +213,13 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   #:methods gen:gxbrt
   [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_file_app k v x l r]]]
    [define [xbrt-set t k v]
-     [x_set t [rbk<-bin-char-str k] [cons k v] [xxf [xbrt-gnx t]] val-def [xbrt-mk t]]]
+     [x_set t [rbk<-bin-char-str k] [cons k v] [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]]
    [define [xbrt-get-gnx t k]
      [x_get-gnx t [rbk<-bin-char-str k] null]]
    [define [xbrt-get t k]
       [x_get t [rbk<-bin-char-str k] null]];]
    [define [xbrt-del t k]
-     [x_del t [rbk<-bin-char-str k] [xxf [xbrt-gnx t]] [xbrt-mk t]]]
+     [x_del t [rbk<-bin-char-str k] [mk_xbrt_xf [xbrt-gnx t]] [xbrt-mk t]]]
 ]]
 
 [define xbrt_file_app_root
