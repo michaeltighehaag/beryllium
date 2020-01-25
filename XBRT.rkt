@@ -451,6 +451,16 @@ refactor gbk-sub-key use to account for streams
 [define [mktz_fdm t]
   [tz_fdm [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
 
+[struct tz_fdpv tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_pre_val]
+  ]]
+
+[define [mktz_fdpv t]
+  [tz_fdpv [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
