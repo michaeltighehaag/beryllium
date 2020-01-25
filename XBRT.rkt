@@ -6,8 +6,6 @@ A functional and eXtensible Binary Radix Tree implementation.
 #|
 todo
 refactor gbk-sub-key use to account for streams
-simplify x_gen default
-reexamine/refactor traversal with descent predicate to account for other use cases
 |#
 
 [require racket/require
@@ -132,53 +130,43 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 ;;;;;;;;;;    define generic xbrt functions   ;;;;;;;;;;;;;;
 
 [define-generics gxbrt
-  [xbrt-mk  gxbrt]
   [xbrt-set gxbrt k v]
   [xbrt-get-gnx gxbrt k]
   [xbrt-get gxbrt k]
   [xbrt-del gxbrt k]
 ]
 
-[define [val-def v x] v]
 ;;;;;;;;; default xbrt ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;  simple  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct xbrt_def xbrt [] #:transparent
   #:methods gen:gxbrt
-  [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_def k v x l r]]]
-   [define [xbrt-set t k v]
-     [x_set t [rbk<-bin-char-str k] [cons k v] [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]]
-   [define [xbrt-get-gnx t k]
-     [x_get-gnx t [rbk<-bin-char-str k] null]]
-   [define [xbrt-get t k]
-      [x_get t [rbk<-bin-char-str k] null]];]
-   [define [xbrt-del t k]
-     [x_del t [rbk<-bin-char-str k] [mk_xbrt_xf [xbrt-gnx t]] [xbrt-mk t]]]
-]]
-
-[define xbrt_def_root
-  [let* [[b [rbk<-bin-char-str ""]]
-         [xk [kx-f null null null]]
-         [xv [vx-f null null null]]
-         [xn [nx-f null null null]]
-         [x [gnx_def xk xv xn]]]
-    [xbrt_def b null x null null]]]
-
-
-;;;;;;;;;;;;;;;;  cons  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[struct xbrt_cons xbrt [] #:transparent
-  #:methods gen:gxbrt
-  [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_cons k v x l r]]]
-   [define [xbrt-set t k v]
-     [let [[pv [xbrt-get t k]]]
-       ;[if [null? pv]
-       ;[x_set t [rbk<-string k] [list k v] [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]
-       [x_set t [rbk<-string k] [cons v pv] [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]
-     ]]
+  [[define [xbrt-set t k v]
+       [x_set t [rbk<-string k] v [mk_xbrt_xf [xbrt-gnx t]] xbrt_def]]
    [define [xbrt-get-gnx t k]
      [x_get-gnx t [rbk<-string k] null]]
    [define [xbrt-get t k]
       [x_get t [rbk<-string k] null]];]
    [define [xbrt-del t k]
-     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] [xbrt-mk t]]]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_def]]
+]]
+
+[define xbrt_def_root
+  [let* [[b [rbk<-string ""]]
+         [x [gnx_null]]]
+    [xbrt_def b null x null null]]]
+
+;;;;;;;;;;;;;;;;  cons  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct xbrt_cons xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-set t k v]
+     [let [[pv [xbrt-get t k]]]
+       [x_set t [rbk<-string k] [cons v pv] [mk_xbrt_xf [xbrt-gnx t]] xbrt_cons]]]
+   [define [xbrt-get-gnx t k]
+     [x_get-gnx t [rbk<-string k] null]]
+   [define [xbrt-get t k]
+      [x_get t [rbk<-string k] null]];]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_cons]]
 ]]
 
 [define xbrt_cons_root
@@ -186,46 +174,45 @@ reexamine/refactor traversal with descent predicate to account for other use cas
          [x [gnx_null]]]
     [xbrt_cons b null x null null]]]
 
-
-[struct xbrt_mdef xbrt [] #:transparent
-  #:methods gen:gxbrt
-  [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_mdef k v x l r]]]
-   [define [xbrt-set t k v]
-       [x_set t [rbk<-string k] v [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]
-     ]
-   [define [xbrt-get-gnx t k]
-     [x_get-gnx t [rbk<-string k] null]]
-   [define [xbrt-get t k]
-      [x_get t [rbk<-string k] null]];]
-   [define [xbrt-del t k]
-     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] [xbrt-mk t]]]
-]]
-
-[define xbrt_mdef_root
-  [let* [[b [rbk<-string ""]]
-         [x [gnx_null]]]
-    [xbrt_mdef b null x null null]]]
-
-
-
 ;;;;;;;;;;;;;;;;  file append  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[struct xbrt_file_app xbrt [] #:transparent
+[struct xbrt_file_rep xbrt [] #:transparent
   #:methods gen:gxbrt
-  [[define [xbrt-mk t] [lambda [k v x l r] [xbrt_file_app k v x l r]]]
-   [define [xbrt-set t k v]
-     [x_set t [rbk<-bin-char-str k] [cons k v] [mk_xbrt_xf [xbrt-gnx t]] val-def [xbrt-mk t]]]
+  [[define [xbrt-set t k v]
+     [x_set t [rbk<-bin-char-str k] [cons k v] [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_rep]]
    [define [xbrt-get-gnx t k]
      [x_get-gnx t [rbk<-bin-char-str k] null]]
    [define [xbrt-get t k]
       [x_get t [rbk<-bin-char-str k] null]];]
    [define [xbrt-del t k]
-     [x_del t [rbk<-bin-char-str k] [mk_xbrt_xf [xbrt-gnx t]] [xbrt-mk t]]]
+     [x_del t [rbk<-bin-char-str k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_rep]]
 ]]
 
-[define xbrt_file_app_root
+[define xbrt_file_rep_root
   [let* [[b [rbk<-bin-char-str ""]]
          [x [gnx_null]]]
-    [xbrt_file_app b null x null null]]]
+    [xbrt_file_rep b null x null null]]]
+
+;;;;;;;;;;;;;;;;; for testing;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct xbrt_test xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-set t k v]
+     [x_set t [rbk<-bin-char-str k] [cons k v] [mk_xbrt_xf [xbrt-gnx t]] xbrt_test]]
+   [define [xbrt-get-gnx t k]
+     [x_get-gnx t [rbk<-bin-char-str k] null]]
+   [define [xbrt-get t k]
+      [x_get t [rbk<-bin-char-str k] null]];]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-bin-char-str k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_test]]
+]]
+
+[define xbrt_test_root
+  [let* [[b [rbk<-bin-char-str ""]]
+         [xk [kx-f null null null]]
+         [xv [vx-f null null null]]
+         [xn [nx-f null null null]]
+         [x [gnx_def xk xv xn]]]
+    [xbrt_test b null x null null]]]
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -260,13 +247,13 @@ reexamine/refactor traversal with descent predicate to account for other use cas
         [cdr nbp] xf mkx]
       ]]]
 
-[define [x_set t k v xf vf mkx]
+[define [x_set t k v xf mkx]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [let [[h [car np]]]
       [let [[b [xbrt-key h]] [hv [xbrt-val h]] [x [xbrt-gnx h]][l [xbrt-left h]][r [xbrt-right h]]]
           [if [equal? nki kl] 
             [if [equal? hmi hbl]
-              [let* [[mnvc [vf v x]][node [mkx b mnvc [xf mnvc l r] l r]]]
+              [let* [[mnvc v][node [mkx b mnvc [xf mnvc l r] l r]]]
                 [rec_up-bp node [cdr np] xf mkx]]
               [let [[nh [mkx [gbk-sub-key b hmi hbl] hv [xf hv l r] l r]]]
                 [if [equal? [gbk-ref b hmi] 0]
@@ -343,12 +330,6 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[struct xbrz [back node nx] #:transparent]
-
-[struct tz [head state zx] #:transparent]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define-generics gnx
   [nx-set gnx nn]
 ]
@@ -358,7 +339,8 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   [[define [nx-set gnx node]
      [nx_def [+ [gbk-length [xbrt-key node]] [nx_def-key_depth gnx]]]]
   ]]
- 
+
+
 [define-generics gzx
   [tx-set gzx z s]
 ]
@@ -367,6 +349,110 @@ reexamine/refactor traversal with descent predicate to account for other use cas
   #:methods gen:gzx
   [[define [tx-set gzx z s] [zx_def [add1 [zx_def-count_val gzx]]]]
   ]]
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+[struct xbrz [back node nx] #:transparent]
+
+[struct tz [head state zx] #:transparent]
+
+[define [xbrz_tdp_def n z] #f]
+[define [xbrz_tdp_tst n z] [< 3 [nx_def-key_depth [xbrz-nx [tz-head z]]]]]
+
+[define [mhcctf x y] [if [equal? x y] #t #f]]
+
+[define [xbrz_vtf_def z]
+  [list [tz-state z]
+        [nx_def-key_depth [xbrz-nx [tz-head z]]]
+        [zx_def-count_val [tz-zx z]]
+        [xbrt-val [xbrz-node [tz-head z]]]
+        ]]
+[define [xbrz_vtf_tst z]
+  [let [[cn [xbrz-node [tz-head z]]]]
+  [if [and [equal? [tz-state z] 'int]] 
+    [list [tz-state z]
+          [nx_def-key_depth [xbrz-nx [tz-head z]]]
+          [xbrt-val cn]
+          [x_val_def-val_count [gnx_def-val_x [xbrt-gnx cn]]]
+          ] 
+    [void]]]]
+[define [xbrz_vtf_val z]
+  [if [equal? [tz-state z] 'pre]
+    [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
+      [if [null? v] [void] [list [cdr v]]]]
+    [void]]]
+[define [xbrz_vtf_main z]
+  [if [equal? [tz-state z] 'pre]
+    [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
+      [if [null? v] [void] [cons [string<-rbk [xbrt-key [xbrz-node [tz-head z]]]] v]]]
+    [void]]]
+[define [xbrz_vtf_pre_val z]
+  [if [equal? [tz-state z] 'pre]
+    [let [[v [xbrt-val [xbrz-node [tz-head z]]]]]
+      [if [null? v] [void] v]]
+    [void]]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define-generics gtz
+  [gtz-iter gtz]
+  [gtz-cdp gtz]
+  [gtz-vtf gtz]
+]
+
+[struct tz_fdv tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_val]
+  ]]
+
+[define [mktz_fdv t]
+  [tz_fdv [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+
+[struct tz_fdd tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_def]
+  ]]
+
+[define [mktz_fdd t]
+  [tz_fdd [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+[struct tz_ftt tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_tst]
+   [define [gtz-vtf gtz] xbrz_vtf_tst]
+  ]]
+
+[define [mktz_ftt t]
+  [tz_ftt [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+[struct tz_rdd tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-prev]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_def]
+  ]]
+
+[define [mktz_rdd t]
+  [tz_rdd [xbrz null t [nx_def 0]] 'pst [zx_def 1]]]
+
+[struct tz_fdm tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_main]
+  ]]
+
+[define [mktz_fdm t]
+  [tz_fdm [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [xbrz-first t cf]
@@ -417,33 +503,19 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[define [xbrz_tdp_def n z] #f]
-[define [xbrz_tdp_tst n z] [< 5 [nx_def-key_depth [xbrz-nx [tz-head z]]]]]
 
-[define [mhcctf x y] [if [equal? x y] #t #f]]
-
-[define [xbrz_vtf_def z]
-  [list [tz-state z]
-        [nx_def-key_depth [xbrz-nx [tz-head z]]]
-        [zx_def-count_val [tz-zx z]]
-        [xbrt-val [xbrz-node [tz-head z]]]
-        ]]
-[define [xbrz_vtf_tst z]
-  [if [and [equal? [tz-state z] 'int] [equal? 5 [nx_def-key_depth [xbrz-nx [tz-head z]]]]] 
-    [list [tz-state z] [xbrt-gnx [xbrz-node [tz-head z]]]] 
-    [void]]]
-[define [xbrz_vtf_val z]
-  [if [equal? [tz-state z] 'pre]
-    [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
-      [if [null? v] [void] [list [cdr v]]]]
-    [void]]]
-[define [xbrz_vtf_main z]
-  [if [equal? [tz-state z] 'pre]
-    [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
-      [if [null? v] [void] [cons [string<-rbk [xbrt-key [xbrz-node [tz-head z]]]] v]]]
-    [void]]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [stream<-xbrz tz]
+  [let [[xbrz-iter [gtz-iter tz]][tdp [gtz-cdp tz]][vtf [gtz-vtf tz]]]
+  [stream-filter [lambda [x] [not [void? x]]]
+    [stream-unfold
+      [lambda [x] [vtf x]]
+      [lambda [x] [not [null? x]]]
+      [lambda [x] [xbrz-iter x tdp]]
+      tz]]]]
+
 
 [define [stream<-xbrt t #:tdp [tdp xbrz_tdp_def] #:vtf [vtf xbrz_vtf_def]]
   [stream-filter [lambda [x] [not [void? x]]]
@@ -505,10 +577,10 @@ reexamine/refactor traversal with descent predicate to account for other use cas
          ]   
     [display "made keylist of length: "] [displayln [length rkl]]
     [display "tree build timing: "]
-    [let* [[t [time [rec-set xbrt_def_root rkl]]]
+    [let* [[t [time [rec-set xbrt_test_root rkl]]]
           [dt [xbrt-del t re]]]
-      [let [[res [stream->list [stream-map car [stream<-xbrt t #:vtf xbrz_vtf_val]]]]
-            [dres [stream->list [stream-map car [stream<-xbrt dt #:vtf xbrz_vtf_val]]]]]
+      [let [[res [stream->list [stream-map car [stream<-xbrz [mktz_fdv t]] ]]]
+            [dres [stream->list [stream-map car [stream<-xbrz [mktz_fdv dt]] ]]]]
         [displayln [take res 10]]
         [displayln [take skl 10]]
       [if [equal? res skl]  [displayln "passed xset test!"]
@@ -519,16 +591,18 @@ reexamine/refactor traversal with descent predicate to account for other use cas
 
 [define [xbrt-test]
     [let [[mt [time [unit-test 12 64]]]]
-      [displayln "fct strm def:"]   
-      [disp-stream [stream-take 20 [stream<-xbrt [car mt] ]]]
-      [disp-stream [stream-take 20 [stream<-xbrt [car mt] #:vtf xbrz_vtf_val]]]
-      [displayln "fct strm tst:"]
-      [disp-stream [stream<-xbrt [car mt] #:tdp xbrz_tdp_tst #:vtf xbrz_vtf_tst]]
+      [displayln "fct strm def def:"]   
+      [disp-stream [stream-take 20 [stream<-xbrz [mktz_fdd [car mt]]]]]
+      [displayln "fct strm def val:"]
+      [disp-stream [stream-take 20 [stream<-xbrz [mktz_fdv [car mt]]]]]
+      [displayln "fct strm tst tst:"]
+      [disp-stream [stream<-xbrz [mktz_ftt [car mt]]]]
+      [displayln "fct strm rev dd:"]
+      [disp-stream [stream-take 20 [stream<-xbrz [mktz_rdd [car mt]]]]]
+      [newline]
       [displayln [xbrt-get-gnx [car mt] ""]]
       [displayln [xbrt-get-gnx [cadr mt] ""]]
-
-      [disp-stream [stream-take 200 [stream<-xbrt [car mt]]]]
-      [disp-stream [stream-take 200 [stream<-xbrt-rev [car mt]]]]
+      [newline]
       ]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

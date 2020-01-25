@@ -63,7 +63,7 @@
     [let [[id [stream-car [cdr x]]]]
       [if [equal? id [spider-get id [caar x]]]
         [spider-check pool [cons [car x] [stream-cdr [cdr x]]] q]
-        [cons [spider pool [caar x] q [list id] xbrt_mdef_root]
+        [cons [spider pool [caar x] q [list id] xbrt_def_root]
               [stream-cdr [cdr x]]]]]]]
 
 [define [spider-group data-pool q tests]
@@ -71,7 +71,7 @@
     [lambda [x] [cdar x]] 
     [lambda [x] [not [stream-null? [cdr x]]]] 
     [lambda [x] [spider-check data-pool x q]]
-    [cons [spider data-pool xbrt_mdef_root q [list [stream-car tests]] xbrt_mdef_root]
+    [cons [spider data-pool xbrt_def_root q [list [stream-car tests]] xbrt_def_root]
           tests]]]   
 
 ;;;;;
@@ -79,11 +79,11 @@
 [define [spider-test]
   [let [[mqt [lambda [p d] [xbrt-get d p]]]]
     [disp-stream
-      [stream<-xbrt #:vtf xbrz_vtf_main spider-test-pool]]
+      [stream<-xbrz [mktz_fdm spider-test-pool]]]
     [disp-stream
-      [stream-map [lambda [x] [stream<-xbrt #:vtf xbrz_vtf_main x]]
+      [stream-map [lambda [x] [stream<-xbrz [mktz_fdm x]]]
       [spider-group spider-test-pool mqt
-                   [stream-map car [stream<-xbrt #:vtf xbrz_vtf_main spider-test-pool]]]] 
+                   [stream-map car [stream<-xbrz [mktz_fdm spider-test-pool]]]]] 
      
       ]
   ]]
