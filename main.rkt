@@ -3,7 +3,7 @@
 [require "common.rkt"]
 [require "stream.rkt"]
 [require "XBRT.rkt"]
-[require "polydex.rkt"]
+;[require "polydex.rkt"]
 [require "time.rkt"]
 [require "XML.rkt"]
 [require "X3D.rkt"]
@@ -13,7 +13,7 @@
 [provide [all-from-out "common.rkt"]]
 [provide [all-from-out "stream.rkt"]]
 [provide [all-from-out "XBRT.rkt"]]
-[provide [all-from-out "polydex.rkt"]]
+;[provide [all-from-out "polydex.rkt"]]
 [provide [all-from-out "time.rkt"]]
 [provide [all-from-out "XML.rkt"]]
 [provide [all-from-out "X3D.rkt"]]
@@ -42,14 +42,14 @@
   [map cswap spider-cl]]
 
 [define spider-test-pool
-  [xbrt<-stream [lambda [z] [rbk<-string [car z]]] cdr xgen-cons
+  [xbrt<-stream xbrt_cons_root
     [stream<-list [shuffle [append spider-cl spider-rcl]]]]]
 ;;;;
 
 
 [define [spider-push l s] [if [null? l] s [spider-push [cdr l] [cons [car l] s]]]]
-[define [spider-add x t] [xset t [rbk<-string x] x]]
-[define [spider-get x t] [xgetv t [rbk<-string x]]]
+[define [spider-add x t] [xbrt-set t x x]]
+[define [spider-get x t] [xbrt-get t x]]
 
 [define [spider pool seen q cand rgrp ]
   [if [null? cand]
@@ -65,7 +65,7 @@
     [let [[id [stream-car [cdr x]]]]
       [if [equal? id [spider-get id [caar x]]]
         [spider-check pool [cons [car x] [stream-cdr [cdr x]]] q]
-        [cons [spider pool [caar x] q [list id] [mk-root xf-def]]
+        [cons [spider pool [caar x] q [list id] xbrt_def_root]
               [stream-cdr [cdr x]]]]]]]
 
 [define [spider-group data-pool q tests]
@@ -73,18 +73,21 @@
     [lambda [x] [cdar x]] 
     [lambda [x] [not [stream-null? [cdr x]]]] 
     [lambda [x] [spider-check data-pool x q]]
-    [cons [spider data-pool [mk-root xf-def] q [list [stream-car tests]] [mk-root xf-def]]
+    [cons [spider data-pool xbrt_def_root q [list [stream-car tests]] xbrt_def_root]
           tests]]]   
 
 ;;;;;
 
 [define [spider-test]
-  [let [[mqt [lambda [p d] [xgetv d [rbk<-string p]]]]]
+  [let [[mqt [lambda [p d] [xbrt-get d p]]]]
     [disp-stream
-      [stream<-xbrt #:vtf cstr-kvps-pre spider-test-pool]]
+      [stream<-xbrz [mktz_fdm spider-test-pool]]]
     [disp-stream
-      [stream-map [lambda [x] [stream<-xbrt #:vtf cstr-kvps-pre x]]
-      [spider-group spider-test-pool mqt [stream-map car [stream<-xbrt #:vtf cstr-kvps-pre spider-test-pool]]]]]
+      [stream-map [lambda [x] [stream<-xbrz [mktz_fdm x]]]
+      [spider-group spider-test-pool mqt
+                   [stream-map car [stream<-xbrz [mktz_fdm spider-test-pool]]]]] 
+     
+      ]
   ]]
 
 

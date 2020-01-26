@@ -10,35 +10,42 @@ Implementation of Polydex functions.
 [require racket/require
   [path-up "XBRT.rkt"]]
 
+[require bitsyntax]
 [require sxml]
 [require html-writing]
 ; (require racket/unsafe/ops)
-[require math]
+;[require math]
 ;[require plot]
 
-[require [prefix-in bs: bitsyntax]]
+
+
 
 [provide [all-defined-out]]
 
+[define [rbk<-bits b][rbk b 0 [bit-string-length b]]]
+[define [rbk<-string str]
+  [let* [[mbs [string->bytes/utf-8 str]]
+         [bits [bit-string [mbs :: binary]]]]
+    [rbk bits 0 [bit-string-length bits]]]]
 
 
-[define [int->bv v s] [bs:integer->bit-string v s #t]]
+[define [int->bv v s] [integer->bit-string v s #t]]
 [define [char-str->bv s]
   [let [[sl [string-length s]]]
     [int->bv [if [equal? sl 0] 0 [string->number s 2]] sl]]]
 [define [bv->char-str bs] 
-  [let [[bsl [bs:bit-string-length bs]]]
-    [if [equal? bsl 0] "" [pad [bs:bit-string->unsigned-integer bs #t] bsl 2]]]]
+  [let [[bsl [bit-string-length bs]]]
+    [if [equal? bsl 0] "" [pad [bit-string->unsigned-integer bs #t] bsl 2]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[define [bv-ref v i] [bs:bit-string-ref v i]]
-[define [bv-l v] [bs:bit-string-length v]]
+[define [bv-ref v i] [bit-string-ref v i]]
+[define [bv-l v] [bit-string-length v]]
 
-[define [bv-tl v] [bs:sub-bit-string v 0  [/ [bv-l v] 2]]]
-[define [bv-tr v] [bs:bit-string-drop v [/ [bv-l v] 2]]]
+[define [bv-tl v] [sub-bit-string v 0  [/ [bv-l v] 2]]]
+[define [bv-tr v] [bit-string-drop v [/ [bv-l v] 2]]]
 
-[define [bv-cat a b] [bs:bit-string-append a b]]
+[define [bv-cat a b] [bit-string-append a b]]
 
 [define [eblg a] [sub1 [integer-length a]]]
 [define [p2 n] [expt 2 n]]
@@ -46,7 +53,7 @@ Implementation of Polydex functions.
 
 [define [bv-xor a b]
   [int->bv
-    [bv-xor-rec [bs:bit-string->unsigned-integer a #t] [bs:bit-string->unsigned-integer b #t]]
+    [bv-xor-rec [bit-string->unsigned-integer a #t] [bit-string->unsigned-integer b #t]]
     [bv-l a]]]
 
 [define [bv-xor-rec ai bi]
@@ -98,8 +105,8 @@ Implementation of Polydex functions.
                        [RM [bv-xor M [bv-xor R Rp]]]]
                    [let [[LMdp [corRM LM [sub1 lc]]]
                          [RMdp [corRM RM [sub1 lc]]]]
-                     [let [[c1 [bs:bit-string-append Lp [bv-xor Lp [bv-xor Sdp RMdp]]]]
-                           [c2 [bs:bit-string-append [bv-xor Rp [bv-xor Sdp LMdp]] Rp]]]
+                     [let [[c1 [bit-string-append Lp [bv-xor Lp [bv-xor Sdp RMdp]]]]
+                           [c2 [bit-string-append [bv-xor Rp [bv-xor Sdp LMdp]] Rp]]]
                        [let [[d1 [bv-dist v c1 1]]
                              [d2 [bv-dist v c2 1]]]
                          [if [< d1 d2]
@@ -133,8 +140,8 @@ Implementation of Polydex functions.
                        [RM [bv-xor M [bv-xor R Rp]]]]
                    [let-values [[[T4 LMdp][dycorRM T3 LM [sub1 lc]]]]
                      [let-values [[[T5 RMdp][dycorRM T4 RM [sub1 lc]]]]
-                     [let [[c1 [bs:bit-string-append Lp [bv-xor Lp [bv-xor Sdp RMdp]]]]
-                           [c2 [bs:bit-string-append [bv-xor Rp [bv-xor Sdp LMdp]] Rp]]]
+                     [let [[c1 [bit-string-append Lp [bv-xor Lp [bv-xor Sdp RMdp]]]]
+                           [c2 [bit-string-append [bv-xor Rp [bv-xor Sdp LMdp]] Rp]]]
                        [let [[d1 [bv-dist v c1 1]]
                              [d2 [bv-dist v c2 1]]]
                          ;[display ll][display " " ][displayln lc]

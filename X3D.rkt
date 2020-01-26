@@ -2,7 +2,7 @@
 [require "common.rkt"]
 [require "stream.rkt"]
 [require "XBRT.rkt"]
-[require "polydex.rkt"]
+;[require "polydex.rkt"]
 [require "time.rkt"]
 [require "XML.rkt"]
 [require "HTML.rkt"]

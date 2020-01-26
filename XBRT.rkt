@@ -1,6 +1,11 @@
 #lang racket
 #|
-A functional eXtensible Binary Radix Tree implementation.
+A functional and eXtensible Binary Radix Tree implementation.
+|#
+
+#|
+todo
+refactor gbk-sub-key use to account for streams
 |#
 
 [require racket/require
@@ -8,111 +13,210 @@ A functional eXtensible Binary Radix Tree implementation.
 [require racket/require
   [path-up "stream.rkt"]]
 [require bitsyntax]
-
+[require racket/generic]
 
 [provide [all-defined-out]]
 
-[define [inz n [f [lambda [n] 1]]] [if [null? n] 0 [f n]]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define-generics gbk
+  [gbk-length gbk]
+  [gbk-ref gbk n]
+  [gbk-cat gbk rb]
+  [bin-char-str<-gbk gbk]
+  [gbk-sub-key gbk s e]
+  [gbk-fd gbk s1 bs2 s2]
+]
 
-
-
-[struct rbk [bits frst last] #:transparent]
-
-[define [gbk-length k] [+ [rbk-last k] [- [rbk-frst k]]]]
-[define [gbk-ref k n] [bit-string-ref [rbk-bits k] [+ [rbk-frst k] n]]]
-[define [gbk-cat lb rb] [rbk [rbk-bits rb] [rbk-frst lb] [rbk-last rb]]]
-[define [bin-char-str<-gbk k]
-  [let [[l [gbk-length k]]]
-    [if [equal? l 0] ""
-      [pad [bit-string->unsigned-integer [sub-bit-string [rbk-bits k] [rbk-frst k][rbk-last k]] #t] l 2]]]]
-[define [gbk-sub-key k s e] [rbk [rbk-bits k] [+ s [rbk-frst k]] [+ e [rbk-frst k]]]]
-[define [gbk-fd bs1 s1 bs2 s2]
-  [if [and [< s1 [gbk-length bs1]] [< s2 [gbk-length bs2]]]
-    [if [equal? [gbk-ref bs1 s1] [gbk-ref bs2 s2]]
-      [add1 [gbk-fd bs1 [add1 s1] bs2 [add1 s2]]]
-      0 ] 0]]
-
-[define [rbk<-bits b][rbk b 0 [bit-string-length b]]]
+;;;;;;;;; RBK ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct rbk [bits frst last] #:transparent
+  #:methods gen:gbk
+  [[define [gbk-length k]
+     [+ [rbk-last k] [- [rbk-frst k]]]]
+   [define [gbk-ref k n]
+     [bit-string-ref [rbk-bits k] [+ [rbk-frst k] n]]]
+   [define [gbk-cat lb rb] [rbk [rbk-bits rb] [rbk-frst lb] [rbk-last rb]]]
+   [define [bin-char-str<-gbk k]
+     [let [[l [gbk-length k]]]
+       [if [equal? l 0] ""
+         [pad [bit-string->unsigned-integer
+               [sub-bit-string [rbk-bits k] [rbk-frst k][rbk-last k]] #t] l 2]]]]
+   [define [gbk-sub-key k s e] [rbk [rbk-bits k] [+ s [rbk-frst k]] [+ e [rbk-frst k]]]]
+   [define [gbk-fd bs1 s1 bs2 s2]
+     [if [and [< s1 [gbk-length bs1]] [< s2 [gbk-length bs2]]]
+       [if [equal? [gbk-ref bs1 s1] [gbk-ref bs2 s2]]
+         [add1 [gbk-fd bs1 [add1 s1] bs2 [add1 s2]]] 0 ] 0]]
+  ]]
 [define [rbk<-int v s] [rbk [integer->bit-string v s #t] 0 s]]
-[define [rbk<-string str]
-  [let* [[bs [string->bytes/utf-8 str]]
-         [bits [bit-string [bs :: binary]]]]
-    [rbk bits 0 [bit-string-length bits]]]]
 [define [rbk<-bin-char-str s]
   [let [[sl [string-length s]]]
     [rbk<-int [if [equal? sl 0] 0 [string->number s 2]] sl]]]
 [define [string<-rbk k]
   [bytes->string/utf-8 [bit-string->bytes [rbk-bits k]]]]
+[define [rbk<-string str]
+  [let* [[bs [string->bytes/utf-8 str]]
+         [bits [bit-string [bs :: binary]]]]
+   [rbk bits 0 [bit-string-length bits]]]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;; FBK ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct fbk [bit-str] #:transparent
+  #:methods gen:gbk
+  [[define [gbk-length k]
+     [bit-string-length k]]
+   [define [gbk-ref k n]
+     [bit-string-ref k n]]
+   [define [gbk-cat lb rb] [bit-string-pack [bit-string-append lb rb]]] 
+   [define [bin-char-str<-gbk k]
+     [let [[l [gbk-length k]]]
+       [if [equal? l 0] ""
+         [pad [bit-string->unsigned-integer k #t] l 2]]]]
+   [define [gbk-sub-key k s e] [sub-bit-string k s e]] 
+   [define [gbk-fd bs1 s1 bs2 s2]
+     [if [and [< s1 [gbk-length bs1]] [< s2 [gbk-length bs2]]]
+       [if [equal? [gbk-ref bs1 s1] [gbk-ref bs2 s2]]
+         [add1 [gbk-fd bs1 [add1 s1] bs2 [add1 s2]]] 0 ] 0]]
+  ]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[struct xbrt [key val gnx left right] #:transparent]
 [define [xbrt-kfb? n][gbk-ref [xbrt-key n] 0]]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define-generics xbrt_gnx
+  [mk_xbrt_xf xbrt_gnx]]
 
-[struct xbrt [key ext left right] #:transparent]
+[struct gnx_null [] #:transparent
+  #:methods gen:xbrt_gnx
+  [[define [mk_xbrt_xf s] [lambda [p l r] [gnx_null]]]]]
 
-[struct extv [val] #:transparent]
+[struct x_key_def  [key_max_height key_min_height] #:transparent]
+[define [kx-f p l r]
+  [x_key_def [max [if [null? l] 0 [+ [gbk-length [xbrt-key l]]
+                                     [x_key_def-key_max_height [gnx_def-key_x [xbrt-gnx l]]]]]
+                  [if [null? r] 0 [+ [gbk-length [xbrt-key r]]
+                                     [x_key_def-key_max_height [gnx_def-key_x [xbrt-gnx r]]]]]]
+             [min [if [null? l] 0 [+ [gbk-length [xbrt-key l]]
+                                     [x_key_def-key_min_height [gnx_def-key_x [xbrt-gnx l]]]]]
+                  [if [null? r] 0 [+ [gbk-length [xbrt-key r]]
+                                     [x_key_def-key_min_height [gnx_def-key_x [xbrt-gnx r]]]]]]]]
 
-[define xf-def [lambda [va l r x]
-  [let [[v [if [null? va] [if [null? x] null [extv-val x]] [if [equal? va [void]] null va]]]]
-    [extv v]]]]
+[struct x_val_def  [val_count val_cum] #:transparent]
+[define [vx-f p l r]
+  [x_val_def [+ [if [null? p] 0 1]
+              [if [null? l] 0 [x_val_def-val_count [gnx_def-val_x [xbrt-gnx l]]]]
+              [if [null? r] 0 [x_val_def-val_count [gnx_def-val_x [xbrt-gnx r]]]]]
+             0]]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct x_node_def [node_count node_max_height node_min_height] #:transparent]
+[define [nx-f p l r]
+  [x_node_def [+ 1 [if [null? l] 0 [x_node_def-node_count [gnx_def-node_x [xbrt-gnx l]]]]
+                   [if [null? r] 0 [x_node_def-node_count [gnx_def-node_x [xbrt-gnx r]]]]]
+              [+ 1 [max [if [null? l] 0 [x_node_def-node_max_height [gnx_def-node_x [xbrt-gnx l]]]]
+                        [if [null? r] 0 [x_node_def-node_max_height [gnx_def-node_x [xbrt-gnx r]]]]]]
+              [+ 1 [min [if [null? l] 0 [x_node_def-node_min_height [gnx_def-node_x [xbrt-gnx l]]]]
+                        [if [null? r] 0 [x_node_def-node_min_height [gnx_def-node_x [xbrt-gnx r]]]]]]
+              ]]
 
-[struct xgen extv [tree-stats accum] #:transparent]
+[struct gnx_def [key_x val_x node_x] #:transparent
+  #:methods gen:xbrt_gnx
+  [[define [mk_xbrt_xf s]
+     [lambda [p l r] 
+       [let [[kx [kx-f p l r]]
+             [vx [vx-f p l r]]
+             [nx [nx-f p l r]]]
+         [gnx_def  kx vx nx]]]]]]
 
-;****
-[define [val-def va x] va]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;    define generic xbrt functions   ;;;;;;;;;;;;;;
 
-[define [mk-val-acc-func accf init] [lambda [va x] [if [null? x] [accf va init] [accf va [extv-val x]]]]]
+[define-generics gxbrt
+  [xbrt-set gxbrt k v]
+  [xbrt-get-gnx gxbrt k]
+  [xbrt-get gxbrt k]
+  [xbrt-del gxbrt k]
+]
 
-[define val-sum [mk-val-acc-func + 0]]
-[define val-cons [mk-val-acc-func cons null]]
+;;;;;;;;; default xbrt ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;  simple  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct xbrt_def xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-set t k v]
+       [x_set t [rbk<-string k] v [mk_xbrt_xf [xbrt-gnx t]] xbrt_def]]
+   [define [xbrt-get-gnx t k]
+     [x_get-gnx t [rbk<-string k] null]]
+   [define [xbrt-get t k]
+      [x_get t [rbk<-string k] null]];]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_def]]
+]]
 
-[define [mk-val-port-func portf]
-  [lambda [va x]
-    [if [null? x]
-      [let [[o [portf [car va]]]]
-        [displayln [cdr va] o] o]
-        [begin [displayln [cdr va] [extv-val x]] [extv-val x]]]]]
+[define xbrt_def_root
+  [let* [[b [rbk<-string ""]]
+         [x [gnx_null]]]
+    [xbrt_def b null x null null]]]
 
-[define val-file [mk-val-port-func [lambda [x] [open-output-file x #:exists 'replace]]]]
-[define val-file-app [mk-val-port-func [lambda [x] [open-output-file x #:exists 'append]]]]
+;;;;;;;;;;;;;;;;  cons  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct xbrt_cons xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-set t k v]
+     [let [[pv [xbrt-get t k]]]
+       [x_set t [rbk<-string k] [cons v pv] [mk_xbrt_xf [xbrt-gnx t]] xbrt_cons]]]
+   [define [xbrt-get-gnx t k]
+     [x_get-gnx t [rbk<-string k] null]]
+   [define [xbrt-get t k]
+      [x_get t [rbk<-string k] null]];]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_cons]]
+]]
 
-;****
-[struct tree-stat [ncount vcount node-height key-height] #:transparent]
-[define [xgen-def-stat v l r]
-  [let [[ls [if [null? l] [tree-stat 0 0 0 0] [xgen-tree-stats [xbrt-ext l]]]]
-        [rs [if [null? r] [tree-stat 0 0 0 0] [xgen-tree-stats [xbrt-ext r]]]]
-        [lkl [if [null? l] 0 [gbk-length [xbrt-key l]]]]
-        [rkl [if [null? r] 0 [gbk-length [xbrt-key r]]]]]
-      [tree-stat [+ 1 [tree-stat-ncount ls][tree-stat-ncount rs]]
-              [+ [if [null? v] 0 1] [tree-stat-vcount ls][tree-stat-vcount rs]]
-              [+ 1 [max [tree-stat-node-height ls][tree-stat-node-height rs]]]
-              [max [+ lkl [tree-stat-key-height ls]]
-                   [+ rkl [tree-stat-key-height rs]]]]]]
+[define xbrt_cons_root
+  [let* [[b [rbk<-string ""]]
+         [x [gnx_null]]]
+    [xbrt_cons b null x null null]]]
 
-;****
-[define [xgen-def-acc-func v l r] null]
+;;;;;;;;;;;;;;;;  file append  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct xbrt_file_rep xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-set t k v]
+     [let [[pv [xbrt-get t k]]]
+       [if [null? pv]
+         [let [[op [open-output-file k #:exists 'replace]]]
+           [displayln v op]
+           [x_set t [rbk<-string k] op [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_rep]]
+         [begin [displayln v pv] t]]]]
+   [define [xbrt-get-gnx t k]
+     [x_get-gnx t [rbk<-string k] null]]
+   [define [xbrt-get t k]
+      [x_get t [rbk<-string k] null]];]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_rep]]
+]]
 
-;****
-[define [mk-xgenf vf sf af]
-  [lambda [va l r x]
-    [let [[v [if [null? va]
-               [if [null? x] null [extv-val x]]
-               [if [equal? va [void]] null [vf va x]]]]]
-      [let [[s [sf v l r]]
-            [a [af v l r]]]
-        [xgen v s a]]]]]
+[define xbrt_file_rep_root
+  [let* [[b [rbk<-string ""]]
+         [x [gnx_null]]]
+    [xbrt_file_rep b null x null null]]]
 
-[define xgen-def [mk-xgenf val-def xgen-def-stat xgen-def-acc-func]]
-[define xgen-file [mk-xgenf val-file xgen-def-stat xgen-def-acc-func]]
-[define xgen-sum [mk-xgenf val-sum xgen-def-stat xgen-def-acc-func]]
-[define xgen-cons [mk-xgenf val-cons xgen-def-stat xgen-def-acc-func]]
+;;;;;;;;;;;;;;;;; for testing;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct xbrt_test xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-set t k v]
+     [x_set t [rbk<-bin-char-str k] [cons k v] [mk_xbrt_xf [xbrt-gnx t]] xbrt_test]]
+   [define [xbrt-get-gnx t k]
+     [x_get-gnx t [rbk<-bin-char-str k] null]]
+   [define [xbrt-get t k]
+      [x_get t [rbk<-bin-char-str k] null]];]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-bin-char-str k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_test]]
+]]
 
-;;;*****
-
-[define [mk-root f] [xbrt [rbk<-bin-char-str ""] [f null null null null] null null]]
+[define xbrt_test_root
+  [let* [[b [rbk<-bin-char-str ""]]
+         [xk [kx-f null null null]]
+         [xv [vx-f null null null]]
+         [xn [nx-f null null null]]
+         [x [gnx_def xk xv xn]]]
+    [xbrt_test b null x null null]]]
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -135,195 +239,323 @@ A functional eXtensible Binary Radix Tree implementation.
             [qk-rec k kl nki [xbrt-key hr][xbrt-left hr][xbrt-right hr][cons hr np]]]]
         [values nki kl hmi hbl np]]]]]
 
-[define [rec-up-bp node nbp xf]
-  [if [equal? [gbk-length [xbrt-key node]] 0] node
+[define [rec_up-bp node nbp xf mkx]
+  [if [equal? [gbk-length [xbrt-key node]] 0];[null? nbp]
+      node
     [let* [[h [car nbp]]
-           [hb [xbrt-key h]][hext [xbrt-ext h]][hl [xbrt-left h]][hr [xbrt-right h]]]
-      [rec-up-bp
+           [hb [xbrt-key h]] [hv [xbrt-val h]] 
+           [hext [xbrt-gnx h]][hl [xbrt-left h]][hr [xbrt-right h]]]
+      [rec_up-bp
         [if [equal? [gbk-ref [xbrt-key node] 0] 0]
-          [xbrt hb [xf null node hr hext] node hr]
-          [xbrt hb [xf null hl node hext] hl node]]
-        [cdr nbp] xf]
+          [mkx hb hv [xf hv node hr] node hr]
+          [mkx hb hv [xf hv hl node] hl node]]
+        [cdr nbp] xf mkx]
       ]]]
 
-[define [xset t k v [xf xf-def]]
+[define [x_set t k v xf mkx]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [let [[h [car np]]]
-      [let [[b [xbrt-key h]][x [xbrt-ext h]][l [xbrt-left h]][r [xbrt-right h]]]
+      [let [[b [xbrt-key h]] [hv [xbrt-val h]] [x [xbrt-gnx h]][l [xbrt-left h]][r [xbrt-right h]]]
           [if [equal? nki kl] 
             [if [equal? hmi hbl]
-              [let [[node [xbrt b [xf v l r x] l r]]]
-                [rec-up-bp node [cdr np] xf]]
-              [let [[nh [xbrt [gbk-sub-key b hmi hbl] [xf null l r x] l r]]]
+              [let* [[mnvc v][node [mkx b mnvc [xf mnvc l r] l r]]]
+                [rec_up-bp node [cdr np] xf mkx]]
+              [let [[nh [mkx [gbk-sub-key b hmi hbl] hv [xf hv l r] l r]]]
                 [if [equal? [gbk-ref b hmi] 0]
-                ;    [let [[node [xbrt [gbk-sub-key b 0 hmi] [xf v nh null null] nh null]]]
-                    [let [[node [xbrt [gbk-sub-key k [- nki hmi] nki] [xf v nh null null] nh null]]]
-                      [rec-up-bp node [cdr np] xf]]
-                    [let [[node [xbrt [gbk-sub-key b 0 hmi] [xf v null nh null] null nh]]]
-                      [rec-up-bp node [cdr np] xf]]]]]
+                    [let [[node [mkx [gbk-sub-key k [- nki hmi] nki] v [xf v nh null] nh null]]]
+                      [rec_up-bp node [cdr np] xf mkx]]
+                    [let [[node [mkx [gbk-sub-key b 0 hmi] v [xf v null nh] null nh]]]
+                      [rec_up-bp node [cdr np] xf mkx]]]]]
             [if [equal? hmi hbl]
-              [let [[nn [xbrt [gbk-sub-key k nki kl] [xf v null null null] null null]]]
+              [let [[nn [mkx [gbk-sub-key k nki kl] v [xf v null null] null null]]]
                 [if [equal? [gbk-ref k nki] 0]
-                    [let [[node [xbrt b [xf null nn r x] nn r]]]
-                      [rec-up-bp node [cdr np] xf]]
-                    [let [[node [xbrt b [xf null l nn x] l nn]]]
-                      [rec-up-bp node [cdr np] xf]]]]
-              [let [[nh [xbrt [gbk-sub-key b hmi hbl] [xf null l r x] l r]]
-                    [nn [xbrt [gbk-sub-key k nki kl] [xf v null null null] null null]]]
+                    [let [[node [mkx b hv [xf hv nn r] nn r]]]
+                      [rec_up-bp node [cdr np] xf mkx]]
+                    [let [[node [mkx b hv [xf hv l nn] l nn]]]
+                      [rec_up-bp node [cdr np] xf mkx]]]]
+              [let [[nh [mkx [gbk-sub-key b hmi hbl] hv [xf hv l r] l r]]
+                    [nn [mkx [gbk-sub-key k nki kl] v [xf v null null] null null]]]
                 [if [equal? [gbk-ref k nki] 0]
-                    [let [[node [xbrt [gbk-sub-key b 0 hmi] [xf null nn nh null] nn nh]]]
-                      [rec-up-bp node [cdr np] xf]]
-                 ;   [let [[node [xbrt [gbk-sub-key b 0 hmi] [xf null nh nn null] nh nn]]]
-                    [let [[node [xbrt [gbk-sub-key k [- nki hmi] nki] [xf null nh nn null] nh nn]]]
-                      [rec-up-bp node [cdr np] xf]]] ]] ] ]]]]
-     
-[define [xget t k]
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [if [null? np] null
-      [let [[n [car np]]]
-        [if [equal? hmi [gbk-length [xbrt-key n]]] [xbrt-ext n] null]]]]]
+                    [let [[node [mkx [gbk-sub-key b 0 hmi] null [xf null nn nh] nn nh]]]
+                      [rec_up-bp node [cdr np] xf mkx]]
+                    [let [[node [mkx [gbk-sub-key k [- nki hmi] nki] null [xf null nh nn] nh nn]]]
+                      [rec_up-bp node [cdr np] xf mkx]]] ]] ] ]]]]
 
-[define [xgetv t k]
+[define [x_get t k d]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [if [null? np] null
+    [if [null? np] d
       [let [[n [car np]]]
-        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]] [extv-val [xbrt-ext n]] null]]]]]
+        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]]
+          [xbrt-val n]
+          d]]]]]
 
- 
-[define [rec-mend-bp b x l r nbp xf]
-  [if [equal? [gbk-length b] 0] [let [[node [xbrt b [xf null l r x] l r]]] node]
+[define [x_get-gnx t k d]
+  [let-values [[[nki kl hmi hbl np] [qk t k]]]
+    [if [null? np] d
+      [let [[n [car np]]]
+        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]] [xbrt-gnx n] d]]]]]
+  
+  
+[define [rec_mend-bp b mnvc x l r nbp xf mkx]
+  [if [equal? [gbk-length b] 0] ;[null? nbp]
+    [let [[node [mkx b mnvc [xf mnvc l r] l r]]] node]
     [let* [[h [car nbp]]
-           [hb [xbrt-key h]][hext [xbrt-ext h]][hl [xbrt-left h]][hr [xbrt-right h]]
+           [hb [xbrt-key h]][hv [xbrt-val h]][hext [xbrt-gnx h]][hl [xbrt-left h]][hr [xbrt-right h]]
            [s [equal? 0 [gbk-ref b 0]]]]
       [if [null? l]
         [if [null? r]
-          [if [null? [extv-val x]]
-            [if s [rec-mend-bp hb [xf null null hr hext] null hr [cdr nbp] xf]
-                  [rec-mend-bp hb [xf null hl null hext] hl null [cdr nbp] xf]]; mend p  000
-            [rec-up-bp [xbrt b x l r] nbp xf]];mknode rec-up   010
-          [if [null? [extv-val x]]
-            [rec-mend-bp [gbk-cat b [xbrt-key r]] [xbrt-ext r] [xbrt-left r] [xbrt-right r] nbp xf];heal ch & mend p 001
-            [rec-up-bp [xbrt b x l r] nbp xf]]];mknode rec-up  011
+          [if [null? mnvc ]
+            [if s [rec_mend-bp hb hv [xf hv null hr] null hr [cdr nbp] xf mkx]
+                  [rec_mend-bp hb hv [xf hv hl null] hl null [cdr nbp] xf mkx]]; mend p 000
+            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]];mknode rec-up   010
+          [if [null? mnvc]
+            [rec_mend-bp [gbk-cat b [xbrt-key r]]
+                         [xbrt-val r] [xbrt-gnx r] [xbrt-left r] [xbrt-right r] nbp xf mkx];heal ch & mend p 001
+            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]]];mknode rec-up  011
         [if [null? r]
-          [if [null? [extv-val x]]
-            [rec-mend-bp [gbk-cat b [xbrt-key l]] [xbrt-ext l] [xbrt-left l] [xbrt-right l] nbp xf];heal ch & mend p 100
-            [rec-up-bp [xbrt b x l r] nbp xf]];mknode rec-up   110
-          [if [null? [extv-val x]]
-            [rec-up-bp [xbrt b x l r] nbp xf];mknode rec-up    101
-            [rec-up-bp [xbrt b x l r] nbp xf]]]];mknode rec-up 111
+          [if [null? mnvc]
+            [rec_mend-bp [gbk-cat b [xbrt-key l]]
+                         [xbrt-val l] [xbrt-gnx l] [xbrt-left l] [xbrt-right l] nbp xf mkx];heal ch & mend p 100
+            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]];mknode rec-up   110
+          [if [null? mnvc]
+            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx];mknode rec-up    101
+            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]]]];mknode rec-up 111
       ]]]
 
-[define [xdel t k [xf xf-def]] ;;needs testing
+
+
+
+[define [x_del t k xf mkx] ;;needs testing
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [let [[h [car np]]]
-      [let [[b [xbrt-key h]][x [xbrt-ext h]][l [xbrt-left h]][r [xbrt-right h]]]
+      [let [[b [xbrt-key h]][x [xbrt-gnx h]][l [xbrt-left h]][r [xbrt-right h]]]
         [if [< nki kl] t
           [if [< hmi hbl] t
-            [rec-mend-bp b [xf [void] l r x] l r [cdr np] xf]]]]]]]
-             
+            [rec_mend-bp b null [xf null l r] l r [cdr np] xf mkx]]]]]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define-generics gnx
+  [nx-set gnx nn]
+]
+
+[struct nx_def [key_depth] #:transparent
+  #:methods gen:gnx
+  [[define [nx-set gnx node]
+     [nx_def [+ [gbk-length [xbrt-key node]] [nx_def-key_depth gnx]]]]
+  ]]
+
+
+[define-generics gzx
+  [tx-set gzx z s]
+]
+
+[struct zx_def [count_val] #:transparent
+  #:methods gen:gzx
+  [[define [tx-set gzx z s] [zx_def [add1 [zx_def-count_val gzx]]]]
+  ]]
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+[struct xbrz [back node nx] #:transparent]
+
+[struct tz [head state zx] #:transparent]
+
+[define [xbrz_tdp_def n z] #f]
+[define [xbrz_tdp_tst n z] [< 3 [nx_def-key_depth [xbrz-nx [tz-head z]]]]]
+
+[define [mhcctf x y] [if [equal? x y] #t #f]]
+
+[define [xbrz_vtf_def z]
+  [list [tz-state z]
+        [nx_def-key_depth [xbrz-nx [tz-head z]]]
+        [zx_def-count_val [tz-zx z]]
+        [xbrt-val [xbrz-node [tz-head z]]]
+        ]]
+[define [xbrz_vtf_tst z]
+  [let [[cn [xbrz-node [tz-head z]]]]
+  [if [and [equal? [tz-state z] 'int]] 
+    [list [tz-state z]
+          [nx_def-key_depth [xbrz-nx [tz-head z]]]
+          [xbrt-val cn]
+          [x_val_def-val_count [gnx_def-val_x [xbrt-gnx cn]]]
+          ] 
+    [void]]]]
+[define [xbrz_vtf_val z]
+  [if [equal? [tz-state z] 'pre]
+    [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
+      [if [null? v] [void] [list [cdr v]]]]
+    [void]]]
+[define [xbrz_vtf_main z]
+  [if [equal? [tz-state z] 'pre]
+    [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
+      [if [null? v] [void] [cons [string<-rbk [xbrt-key [xbrz-node [tz-head z]]]] v]]]
+    [void]]]
+[define [xbrz_vtf_pre_val z]
+  [if [equal? [tz-state z] 'pre]
+    [let [[v [xbrt-val [xbrz-node [tz-head z]]]]]
+      [if [null? v] [void] v]]
+    [void]]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define-generics gtz
+  [gtz-iter gtz]
+  [gtz-cdp gtz]
+  [gtz-vtf gtz]
+]
+
+[struct tz_fdv tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_val]
+  ]]
+
+[define [mktz_fdv t]
+  [tz_fdv [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+
+[struct tz_fdd tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_def]
+  ]]
+
+[define [mktz_fdd t]
+  [tz_fdd [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+[struct tz_ftt tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_tst]
+   [define [gtz-vtf gtz] xbrz_vtf_tst]
+  ]]
+
+[define [mktz_ftt t]
+  [tz_ftt [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+[struct tz_rdd tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-prev]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_def]
+  ]]
+
+[define [mktz_rdd t]
+  [tz_rdd [xbrz null t [nx_def 0]] 'pst [zx_def 1]]]
+
+[struct tz_fdm tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_main]
+  ]]
+
+[define [mktz_fdm t]
+  [tz_fdm [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+[struct tz_fdpv tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_pre_val]
+  ]]
+
+[define [mktz_fdpv t]
+  [tz_fdpv [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [xbrz-first t cf]
+  [tz [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+
+[define [xbrz-next z cf]
+  [let [[h [tz-head z]]
+        [s [tz-state z]]
+        [x [tz-zx z]]]
+    [if [equal? 'pre s]
+      [let [[l [xbrt-left [xbrz-node h]]]]
+        [if [or [null? l] [cf l z]]
+          [tz h 'int [tx-set x z 'int]]
+          [tz [xbrz h l [nx-set [xbrz-nx h] l]] 'pre [tx-set x z 'pre]]]] 
+      [if [equal? 'int s]
+        [let [[r [xbrt-right [xbrz-node h]]]] 
+          [if [or [null? r] [cf r z]]
+            [tz h 'pst [tx-set x z 'pst]]
+            [tz [xbrz h r [nx-set [xbrz-nx h] r]] 'pre [tx-set x z 'pre]]]]    
+        [if [null? [xbrz-back [tz-head z]]]
+          null
+          [if [equal? 0 [xbrt-kfb? [xbrz-node h]]]
+            [tz [xbrz-back [tz-head z]] 'int [tx-set x z 'int]] 
+            [tz [xbrz-back [tz-head z]] 'pst [tx-set x z 'pst]]]]]]]] 
+
+[define [xbrz-last t cf]
+  [tz [xbrz null t [nx_def 0]] 'pst [zx_def 1]]]
+
+[define [xbrz-prev z cf]
+  [let [[h [tz-head z]]
+        [s [tz-state z]]
+        [x [tz-zx z]]]
+    [if [equal? 'pst s]
+      [let [[r [xbrt-right [xbrz-node h]]]]
+        [if [or [null? r] [cf r z]]
+          [tz h 'int [tx-set x z 'int]]
+          [tz [xbrz h r [nx-set [xbrz-nx h] r]] 'pst [tx-set x z 'pst]]]] 
+      [if [equal? 'int s]
+        [let [[l [xbrt-left [xbrz-node h]]]] 
+          [if [or [null? l] [cf l z]]
+            [tz h 'pre [tx-set x z 'pre]]
+            [tz [xbrz h l [nx-set [xbrz-nx h] l]] 'pst [tx-set x z 'pst]]]]    
+        [if [null? [xbrz-back [tz-head z]]]
+          null
+          [if [equal? 1 [xbrt-kfb? [xbrz-node h]]]
+            [tz [xbrz-back [tz-head z]] 'int [tx-set x z 'int]] 
+            [tz [xbrz-back [tz-head z]] 'pre [tx-set x z 'pre]]]]]]]] 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[define [fct-first t cf pxf]
-  [if [cf t null]
-    [cons 0 null]
-    [cons 1 [list [cons t [pxf t null]]]]]]
-
-[define [fct-next s bp cf pxf]
-  [if [equal? 1 s]
-    [let [[l [xbrt-left [caar bp]]]]
-      [if [or [null? l] [cf l bp]]
-        [cons 2 bp]
-        [cons 1 [cons [cons l [pxf l bp]] bp]]]]
-    [if [equal? 2 s]
-      [let [[r [xbrt-right [caar bp]]]]
-        [if [or [null? r] [cf r bp]]
-          [cons 3 bp]
-          [cons 1 [cons [cons r [pxf r bp]] bp]]]]
-      [if [null? [cdr bp]]
-        [cons 0 null]
-        [if [equal? 0 [xbrt-kfb? [caar bp]]]
-          [cons 2 [cdr bp]]
-          [cons 3 [cdr bp]]]]]]]
-
-[define [fct-last t cf pxf]
-  [if [cf t null]
-    [cons 0 null]
-    [cons 3 [list [cons t [pxf t null]]]]]]
-
-[define [fct-prev s bp cf pxf]
-  [if [equal? 3 s]
-    [let [[r [xbrt-right [caar bp]]]]
-      [if [or [null? r] [cf r bp]]
-        [cons 2 bp]
-        [cons 3 [cons [cons r [pxf r bp]] bp]]]]
-    [if [equal? 2 s]
-      [let [[l [xbrt-left [caar bp]]]]
-        [if [or [null? l] [cf l bp]]
-          [cons 1 bp]
-          [cons 3 [cons [cons l [pxf l bp]] bp]]]]
-      [if [null? [cdr bp]]
-        [cons 0 null]
-        [if [equal? 0 [xbrt-kfb? [caar bp]]]
-          [cons 1 [cdr bp]]
-          [cons 2 [cdr bp]]]]]]]
-
-
-[define [tdp-def n bp] #f]
-[define [tpf-def n bp] [if [null? bp] [xbrt-key n][gbk-cat [cdar bp][xbrt-key n]]]]
-[define [vtf-def s bp] [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]]
-
-[define [tdp-tst n bp] [< 5 [+ [gbk-length [xbrt-key n]] [if [null? bp] 0 [gbk-length [cdar bp]]]]]]
-[define [vtf-tst s bp]
-  [if [and [equal? s 2] [equal? 5 [gbk-length [cdar bp]]]]
-    [list s [bin-char-str<-gbk [cdar bp]] [extv-val [xbrt-ext [caar bp]]]]
-    [void]]]
-
-[define [cstr-kvps-pre s bp]
-  [let [[k [string<-rbk [cdar bp]]]
-        [v [extv-val [xbrt-ext [caar bp]]]]]
-    [if [and [equal? 1 s] [not [null? v]]]
-      [cons k v]
-      [void]]]] 
-      
-[define [pre-val s bp]
-  [if [equal? s 1]
-    [let [[v [extv-val [xbrt-ext [caar bp]]]]]
-      [if [null? v] [void] [list v]]]
-    [void]]]
-
-
-[define [stream<-xbrt t #:tdp [tdp tdp-def] #:tpf [tpf tpf-def] #:vtf [vtf vtf-def]]
+[define [stream<-xbrz tz]
+  [let [[xbrz-iter [gtz-iter tz]][tdp [gtz-cdp tz]][vtf [gtz-vtf tz]]]
   [stream-filter [lambda [x] [not [void? x]]]
     [stream-unfold
-      [lambda [x] [vtf [car x][cdr x]]]
-      [lambda [x] [< 0 [car x]]]
-      [lambda [x] [fct-next [car x] [cdr x] tdp tpf]]
-      [fct-first t tdp tpf]]]]
-[define [stream<-xbrt-rev t #:tdp [tdp tdp-def] #:tpf [tpf tpf-def] #:vtf [vtf vtf-def]]
-  [stream-filter [lambda [x] [not [void? x]]]
-    [stream-unfold
-      [lambda [x] [vtf [car x][cdr x]]]
-      [lambda [x] [< 0 [car x]]]
-      [lambda [x] [fct-prev [car x] [cdr x] tdp tpf]]
-      [fct-last t tdp tpf]]]]
+      [lambda [x] [vtf x]]
+      [lambda [x] [not [null? x]]]
+      [lambda [x] [xbrz-iter x tdp]]
+      tz]]]]
+
+[define [rec-set t l]
+  [if [null? l] t
+    [let [[e [car l]]]
+      [rec-set [xbrt-set t e [cat "" e]] [cdr l]]]]]
+
+[define [xbrt<-stream t s]
+  [if [stream-null? s] t
+    [let [[e [stream-car s]]]
+      [xbrt<-stream [xbrt-set t [car e] [cdr e]] [stream-cdr s]]]]]
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[define [xbrt=? x y]
-  [let [[nx [if [null? x] [mk-root xf-def] x]]
-        [ny [if [null? y] [mk-root xf-def] y]]]
-    [and [bit-string-equal? [bit-string-pack [xbrt-key nx]] [bit-string-pack [xbrt-key ny]]]
-         [equal? [xbrt-ext nx] [xbrt-ext ny]]
-         [xbrt=? [xbrt-left nx] [xbrt-left ny]]
-         [xbrt=? [xbrt-right nx] [xbrt-right ny]]]]]
+;;;;;;;;;;;;;;;;; deque ;;;;;;;;;;;;;;;;;;;;
+[define [mk-deq] void]
+[define [deq-head-push d] void]
+[define [deq-head-pop  d] void]
+[define [deq-tail-push d] void]
+[define [deq-tail-pop  d] void]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [nmk-rbs min max]
   [substring [apply string-append [for/list [[k [in-range 0 [add1 [quotient max 16]]]]]
     [pad [random [expt 2 16]] 16 2]]] min [+ min [random [- [add1 max] min]]]]]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [unit-test n r]
   [let* [[kl [for/list [[j [in-range 0 [expt 2 n]]]] [nmk-rbs 0 r]]]
@@ -336,42 +568,33 @@ A functional eXtensible Binary Radix Tree implementation.
          ]   
     [display "made keylist of length: "] [displayln [length rkl]]
     [display "tree build timing: "]
-    [let* [[t [time [rec-set [mk-root xgen-def] rkl xgen-def]]]
-          [dt [xdel t  [rbk<-bin-char-str re] xgen-def]]]
-      [let [[res [stream->list [stream-map car [stream<-xbrt t #:vtf pre-val]]]]
-            [dres [stream->list [stream-map car [stream<-xbrt dt #:vtf pre-val]]]]]
+    [let* [[t [time [rec-set xbrt_test_root rkl]]]
+          [dt [xbrt-del t re]]]
+      [let [[res [stream->list [stream-map car [stream<-xbrz [mktz_fdv t]] ]]]
+            [dres [stream->list [stream-map car [stream<-xbrz [mktz_fdv dt]] ]]]]
+        [displayln [take res 10]]
+        [displayln [take skl 10]]
       [if [equal? res skl]  [displayln "passed xset test!"]
                             [displayln "FAILED xset test!"]]
       [if [equal? dres dskl]  [displayln "passed xdel test!"]
                               [displayln "FAILED xdel test!"]]
-      [list t rkl]]]]]
+      [list t dt rkl]]]]]
 
 [define [xbrt-test]
-    [let [[mt [unit-test 12 64]]]
-      [displayln "fct strm def:"]   
-      [disp-stream [stream-take 20 [stream<-xbrt [car mt]]]]
-      [disp-stream [stream-take 20 [stream<-xbrt [car mt] #:vtf pre-val]]]
-      [displayln "fct strm tst:"]
-      [disp-stream [stream<-xbrt [car mt] #:tdp tdp-tst #:vtf vtf-tst]]
-      [xget [car mt] [rbk<-bin-char-str ""]]]]
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[define [rec-set t l xf]
-  [if [null? l] t
-    [let [[e [car l]]]
-      [rec-set [xset t [rbk<-bin-char-str e] e xf ] [cdr l] xf ]]]]
-
-[define [xbrt<-stream kf vf xf s]
-  [xbrt<-stream-rec [mk-root xf] kf vf xf s]]
-[define [xbrt<-stream-rec t kf vf xf s]
-  [if [stream-null? s] t
-    [let [[e [stream-car s]]]
-      [xbrt<-stream-rec [xset t [kf e] [vf e] xf] kf vf xf [stream-cdr s]]]]]
+    [let [[mt [time [unit-test 12 64]]]]
+      [displayln "fct strm def def:"]   
+      [disp-stream [stream-take 20 [stream<-xbrz [mktz_fdd [car mt]]]]]
+      [displayln "fct strm def val:"]
+      [disp-stream [stream-take 20 [stream<-xbrz [mktz_fdv [car mt]]]]]
+      [displayln "fct strm tst tst:"]
+      [disp-stream [stream<-xbrz [mktz_ftt [car mt]]]]
+      [displayln "fct strm rev dd:"]
+      [disp-stream [stream-take 20 [stream<-xbrz [mktz_rdd [car mt]]]]]
+      [newline]
+      [displayln [xbrt-get-gnx [car mt] ""]]
+      [displayln [xbrt-get-gnx [cadr mt] ""]]
+      [newline]
+      ]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
