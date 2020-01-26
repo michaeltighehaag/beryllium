@@ -178,17 +178,22 @@ refactor gbk-sub-key use to account for streams
 [struct xbrt_file_rep xbrt [] #:transparent
   #:methods gen:gxbrt
   [[define [xbrt-set t k v]
-     [x_set t [rbk<-bin-char-str k] [cons k v] [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_rep]]
+     [let [[pv [xbrt-get t k]]]
+       [if [null? pv]
+         [let [[op [open-output-file k #:exists 'replace]]]
+           [displayln v op]
+           [x_set t [rbk<-string k] op [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_rep]]
+         [begin [displayln v pv] t]]]]
    [define [xbrt-get-gnx t k]
-     [x_get-gnx t [rbk<-bin-char-str k] null]]
+     [x_get-gnx t [rbk<-string k] null]]
    [define [xbrt-get t k]
-      [x_get t [rbk<-bin-char-str k] null]];]
+      [x_get t [rbk<-string k] null]];]
    [define [xbrt-del t k]
-     [x_del t [rbk<-bin-char-str k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_rep]]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_rep]]
 ]]
 
 [define xbrt_file_rep_root
-  [let* [[b [rbk<-bin-char-str ""]]
+  [let* [[b [rbk<-string ""]]
          [x [gnx_null]]]
     [xbrt_file_rep b null x null null]]]
 
@@ -526,34 +531,10 @@ refactor gbk-sub-key use to account for streams
       [lambda [x] [xbrz-iter x tdp]]
       tz]]]]
 
-
-[define [stream<-xbrt t #:tdp [tdp xbrz_tdp_def] #:vtf [vtf xbrz_vtf_def]]
-  [stream-filter [lambda [x] [not [void? x]]]
-    [stream-unfold
-      [lambda [x] [vtf x]]
-      [lambda [x] [not [null? x]]]
-      [lambda [x] [xbrz-next x tdp]]
-      [xbrz-first t tdp]]]]
-
-[define [stream<-xbrt-rev t #:tdp [tdp xbrz_tdp_def] #:vtf [vtf xbrz_vtf_def]]
-  [stream-filter [lambda [x] [not [void? x]]]
-    [stream-unfold
-      [lambda [x] [vtf x]]
-      [lambda [x] [not [null? x]]]
-      [lambda [x] [xbrz-prev x tdp]]
-      [xbrz-last t tdp]]]]
-
-[define [gxbrt<-stream t s]
-  [if [stream-null? s] t
-    [let [[e [stream-car s]]]
-      [gxbrt<-stream [xbrt-set t [car e] [cdr e]] [stream-cdr s]]]]]
-
-
 [define [rec-set t l]
   [if [null? l] t
     [let [[e [car l]]]
       [rec-set [xbrt-set t e [cat "" e]] [cdr l]]]]]
-
 
 [define [xbrt<-stream t s]
   [if [stream-null? s] t
