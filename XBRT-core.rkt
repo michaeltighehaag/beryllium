@@ -37,8 +37,10 @@ refactor gbk-sub-key use to account for streams
 
 [define-generics gxbrt
   [xbrt-set gxbrt k v]
-  [xbrt-get-gnx gxbrt k]
+  [xbrt-nset gxbrt n v]
   [xbrt-get gxbrt k]
+  [xbrt-xget gxbrt k]
+  [xbrt-nget gxbrt k]
   [xbrt-del gxbrt k]
 ]
 
@@ -104,21 +106,12 @@ refactor gbk-sub-key use to account for streams
                     [let [[node [mkx [gbk-sub-key k [- nki hmi] nki] null [xf null nh nn] nh nn]]]
                       [rec_up-bp node [cdr np] xf mkx]]] ]] ] ]]]]
 
-[define [x_get t k d]
+[define [x_nget t k d]
   [let-values [[[nki kl hmi hbl np] [qk t k]]]
     [if [null? np] d
       [let [[n [car np]]]
-        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]]
-          [xbrt-val n]
-          d]]]]]
-
-[define [x_get-gnx t k d]
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [if [null? np] d
-      [let [[n [car np]]]
-        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]] [xbrt-gnx n] d]]]]]
-  
-  
+        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]] n d]]]]]
+    
 [define [rec_mend-bp b mnvc x l r nbp xf mkx]
   [if [equal? [gbk-length b] 0] ;[null? nbp]
     [let [[node [mkx b mnvc [xf mnvc l r] l r]]] node]
