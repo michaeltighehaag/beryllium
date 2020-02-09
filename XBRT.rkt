@@ -14,9 +14,11 @@ refactor gbk-sub-key use to account for streams
   [path-up "stream.rkt"]]
 [require racket/require
   [path-up "XBRT-core.rkt"]]
+
 [require bitsyntax]
 [require racket/generic]
 
+[provide [all-from-out "XBRT-core.rkt"]]
 [provide [all-defined-out]]
 
 
@@ -383,4 +385,3 @@ refactor gbk-sub-key use to account for streams
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
