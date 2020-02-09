@@ -12,22 +12,17 @@ refactor gbk-sub-key use to account for streams
   [path-up "common.rkt"]]
 [require racket/require
   [path-up "stream.rkt"]]
+[require racket/require
+  [path-up "XBRT-core.rkt"]]
 [require bitsyntax]
 [require racket/generic]
 
 [provide [all-defined-out]]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[define-generics gbk
-  [gbk-length gbk]
-  [gbk-ref gbk n]
-  [gbk-cat gbk rb]
-  [bin-char-str<-gbk gbk]
-  [gbk-sub-key gbk s e]
-  [gbk-fd gbk s1 bs2 s2]
-]
 
-;;;;;;;;; RBK ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;; RBK ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct rbk [bits frst last] #:transparent
   #:methods gen:gbk
   [[define [gbk-length k]
@@ -77,14 +72,9 @@ refactor gbk-sub-key use to account for streams
          [add1 [gbk-fd bs1 [add1 s1] bs2 [add1 s2]]] 0 ] 0]]
   ]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[struct xbrt [key val gnx left right] #:transparent]
-[define [xbrt-kfb? n][gbk-ref [xbrt-key n] 0]]
-
-[define-generics xbrt_gnx
-  [mk_xbrt_xf xbrt_gnx]]
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct gnx_null [] #:transparent
   #:methods gen:xbrt_gnx
   [[define [mk_xbrt_xf s] [lambda [p l r] [gnx_null]]]]]
@@ -126,17 +116,9 @@ refactor gbk-sub-key use to account for streams
              [nx [nx-f p l r]]]
          [gnx_def  kx vx nx]]]]]]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;    define generic xbrt functions   ;;;;;;;;;;;;;;
 
-[define-generics gxbrt
-  [xbrt-set gxbrt k v]
-  [xbrt-get-gnx gxbrt k]
-  [xbrt-get gxbrt k]
-  [xbrt-del gxbrt k]
-]
-
-;;;;;;;;; default xbrt ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;  simple  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct xbrt_def xbrt [] #:transparent
   #:methods gen:gxbrt
@@ -220,160 +202,31 @@ refactor gbk-sub-key use to account for streams
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[define [qk t k] ;[values nki kl hmi hbl np]
-  [qk-rec k [gbk-length k] 0 [xbrt-key t] [xbrt-left t][xbrt-right t][list t]]]
-[define [qk-rec k kl ki hb hl hr np]
-  [let* [[hmi [gbk-fd k ki hb 0]]
-         [nki [+ ki hmi]]
-         [hbl [gbk-length hb]]]
-    [if [< hmi hbl]
-      [values nki kl hmi hbl np]
-      [if [< nki kl]
-        [if [equal? [gbk-ref k nki] 0]
-          [if [equal? hl null]
-            [values nki kl hmi hbl np]
-            [qk-rec k kl nki [xbrt-key hl][xbrt-left hl][xbrt-right hl][cons hl np]]]
-          [if [equal? hr null]
-            [values nki kl hmi hbl np]
-            [qk-rec k kl nki [xbrt-key hr][xbrt-left hr][xbrt-right hr][cons hr np]]]]
-        [values nki kl hmi hbl np]]]]]
-
-[define [rec_up-bp node nbp xf mkx]
-  [if [equal? [gbk-length [xbrt-key node]] 0];[null? nbp]
-      node
-    [let* [[h [car nbp]]
-           [hb [xbrt-key h]] [hv [xbrt-val h]] 
-           [hext [xbrt-gnx h]][hl [xbrt-left h]][hr [xbrt-right h]]]
-      [rec_up-bp
-        [if [equal? [gbk-ref [xbrt-key node] 0] 0]
-          [mkx hb hv [xf hv node hr] node hr]
-          [mkx hb hv [xf hv hl node] hl node]]
-        [cdr nbp] xf mkx]
-      ]]]
-
-[define [x_set t k v xf mkx]
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [let [[h [car np]]]
-      [let [[b [xbrt-key h]] [hv [xbrt-val h]] [x [xbrt-gnx h]][l [xbrt-left h]][r [xbrt-right h]]]
-          [if [equal? nki kl] 
-            [if [equal? hmi hbl]
-              [let* [[mnvc v][node [mkx b mnvc [xf mnvc l r] l r]]]
-                [rec_up-bp node [cdr np] xf mkx]]
-              [let [[nh [mkx [gbk-sub-key b hmi hbl] hv [xf hv l r] l r]]]
-                [if [equal? [gbk-ref b hmi] 0]
-                    [let [[node [mkx [gbk-sub-key k [- nki hmi] nki] v [xf v nh null] nh null]]]
-                      [rec_up-bp node [cdr np] xf mkx]]
-                    [let [[node [mkx [gbk-sub-key b 0 hmi] v [xf v null nh] null nh]]]
-                      [rec_up-bp node [cdr np] xf mkx]]]]]
-            [if [equal? hmi hbl]
-              [let [[nn [mkx [gbk-sub-key k nki kl] v [xf v null null] null null]]]
-                [if [equal? [gbk-ref k nki] 0]
-                    [let [[node [mkx b hv [xf hv nn r] nn r]]]
-                      [rec_up-bp node [cdr np] xf mkx]]
-                    [let [[node [mkx b hv [xf hv l nn] l nn]]]
-                      [rec_up-bp node [cdr np] xf mkx]]]]
-              [let [[nh [mkx [gbk-sub-key b hmi hbl] hv [xf hv l r] l r]]
-                    [nn [mkx [gbk-sub-key k nki kl] v [xf v null null] null null]]]
-                [if [equal? [gbk-ref k nki] 0]
-                    [let [[node [mkx [gbk-sub-key b 0 hmi] null [xf null nn nh] nn nh]]]
-                      [rec_up-bp node [cdr np] xf mkx]]
-                    [let [[node [mkx [gbk-sub-key k [- nki hmi] nki] null [xf null nh nn] nh nn]]]
-                      [rec_up-bp node [cdr np] xf mkx]]] ]] ] ]]]]
-
-[define [x_get t k d]
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [if [null? np] d
-      [let [[n [car np]]]
-        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]]
-          [xbrt-val n]
-          d]]]]]
-
-[define [x_get-gnx t k d]
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [if [null? np] d
-      [let [[n [car np]]]
-        [if [and [equal? hmi [gbk-length [xbrt-key n]]][equal? nki kl]] [xbrt-gnx n] d]]]]]
-  
-  
-[define [rec_mend-bp b mnvc x l r nbp xf mkx]
-  [if [equal? [gbk-length b] 0] ;[null? nbp]
-    [let [[node [mkx b mnvc [xf mnvc l r] l r]]] node]
-    [let* [[h [car nbp]]
-           [hb [xbrt-key h]][hv [xbrt-val h]][hext [xbrt-gnx h]][hl [xbrt-left h]][hr [xbrt-right h]]
-           [s [equal? 0 [gbk-ref b 0]]]]
-      [if [null? l]
-        [if [null? r]
-          [if [null? mnvc ]
-            [if s [rec_mend-bp hb hv [xf hv null hr] null hr [cdr nbp] xf mkx]
-                  [rec_mend-bp hb hv [xf hv hl null] hl null [cdr nbp] xf mkx]]; mend p 000
-            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]];mknode rec-up   010
-          [if [null? mnvc]
-            [rec_mend-bp [gbk-cat b [xbrt-key r]]
-                         [xbrt-val r] [xbrt-gnx r] [xbrt-left r] [xbrt-right r] nbp xf mkx];heal ch & mend p 001
-            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]]];mknode rec-up  011
-        [if [null? r]
-          [if [null? mnvc]
-            [rec_mend-bp [gbk-cat b [xbrt-key l]]
-                         [xbrt-val l] [xbrt-gnx l] [xbrt-left l] [xbrt-right l] nbp xf mkx];heal ch & mend p 100
-            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]];mknode rec-up   110
-          [if [null? mnvc]
-            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx];mknode rec-up    101
-            [rec_up-bp [mkx b mnvc x l r] nbp xf mkx]]]];mknode rec-up 111
-      ]]]
-
-
-
-
-[define [x_del t k xf mkx] ;;needs testing
-  [let-values [[[nki kl hmi hbl np] [qk t k]]]
-    [let [[h [car np]]]
-      [let [[b [xbrt-key h]][x [xbrt-gnx h]][l [xbrt-left h]][r [xbrt-right h]]]
-        [if [< nki kl] t
-          [if [< hmi hbl] t
-            [rec_mend-bp b null [xf null l r] l r [cdr np] xf mkx]]]]]]]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[define-generics gnx
-  [nx-set gnx nn]
-]
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct nx_def [key_depth] #:transparent
   #:methods gen:gnx
   [[define [nx-set gnx node]
      [nx_def [+ [gbk-length [xbrt-key node]] [nx_def-key_depth gnx]]]]
   ]]
 
-
-[define-generics gzx
-  [tx-set gzx z s]
-]
-
 [struct zx_def [count_val] #:transparent
   #:methods gen:gzx
   [[define [tx-set gzx z s] [zx_def [add1 [zx_def-count_val gzx]]]]
   ]]
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-[struct xbrz [back node nx] #:transparent]
-
-[struct tz [head state zx] #:transparent]
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define [xbrz_tdp_def n z] #f]
+
 [define [xbrz_tdp_tst n z] [< 3 [nx_def-key_depth [xbrz-nx [tz-head z]]]]]
 
-[define [mhcctf x y] [if [equal? x y] #t #f]]
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define [xbrz_vtf_def z]
   [list [tz-state z]
         [nx_def-key_depth [xbrz-nx [tz-head z]]]
         [zx_def-count_val [tz-zx z]]
         [xbrt-val [xbrz-node [tz-head z]]]
         ]]
+
 [define [xbrz_vtf_tst z]
   [let [[cn [xbrz-node [tz-head z]]]]
   [if [and [equal? [tz-state z] 'int]] 
@@ -383,28 +236,26 @@ refactor gbk-sub-key use to account for streams
           [x_val_def-val_count [gnx_def-val_x [xbrt-gnx cn]]]
           ] 
     [void]]]]
+
 [define [xbrz_vtf_val z]
   [if [equal? [tz-state z] 'pre]
     [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
       [if [null? v] [void] [list [cdr v]]]]
     [void]]]
+
 [define [xbrz_vtf_main z]
   [if [equal? [tz-state z] 'pre]
     [let [[v[xbrt-val [xbrz-node [tz-head z]]]]]
       [if [null? v] [void] [cons [string<-rbk [xbrt-key [xbrz-node [tz-head z]]]] v]]]
     [void]]]
+
 [define [xbrz_vtf_pre_val z]
   [if [equal? [tz-state z] 'pre]
     [let [[v [xbrt-val [xbrz-node [tz-head z]]]]]
       [if [null? v] [void] v]]
     [void]]]
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[define-generics gtz
-  [gtz-iter gtz]
-  [gtz-cdp gtz]
-  [gtz-vtf gtz]
-]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_fdv tz [] #:transparent
   #:methods gen:gtz
   [[define [gtz-iter gtz] xbrz-next]
@@ -415,7 +266,7 @@ refactor gbk-sub-key use to account for streams
 [define [mktz_fdv t]
   [tz_fdv [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_fdd tz [] #:transparent
   #:methods gen:gtz
   [[define [gtz-iter gtz] xbrz-next]
@@ -426,6 +277,7 @@ refactor gbk-sub-key use to account for streams
 [define [mktz_fdd t]
   [tz_fdd [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_ftt tz [] #:transparent
   #:methods gen:gtz
   [[define [gtz-iter gtz] xbrz-next]
@@ -436,6 +288,7 @@ refactor gbk-sub-key use to account for streams
 [define [mktz_ftt t]
   [tz_ftt [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_rdd tz [] #:transparent
   #:methods gen:gtz
   [[define [gtz-iter gtz] xbrz-prev]
@@ -446,6 +299,7 @@ refactor gbk-sub-key use to account for streams
 [define [mktz_rdd t]
   [tz_rdd [xbrz null t [nx_def 0]] 'pst [zx_def 1]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_fdm tz [] #:transparent
   #:methods gen:gtz
   [[define [gtz-iter gtz] xbrz-next]
@@ -456,6 +310,7 @@ refactor gbk-sub-key use to account for streams
 [define [mktz_fdm t]
   [tz_fdm [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_fdpv tz [] #:transparent
   #:methods gen:gtz
   [[define [gtz-iter gtz] xbrz-next]
@@ -466,85 +321,15 @@ refactor gbk-sub-key use to account for streams
 [define [mktz_fdpv t]
   [tz_fdpv [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[define [xbrz-first t cf]
-  [tz [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
-
-[define [xbrz-next z cf]
-  [let [[h [tz-head z]]
-        [s [tz-state z]]
-        [x [tz-zx z]]]
-    [if [equal? 'pre s]
-      [let [[l [xbrt-left [xbrz-node h]]]]
-        [if [or [null? l] [cf l z]]
-          [tz h 'int [tx-set x z 'int]]
-          [tz [xbrz h l [nx-set [xbrz-nx h] l]] 'pre [tx-set x z 'pre]]]] 
-      [if [equal? 'int s]
-        [let [[r [xbrt-right [xbrz-node h]]]] 
-          [if [or [null? r] [cf r z]]
-            [tz h 'pst [tx-set x z 'pst]]
-            [tz [xbrz h r [nx-set [xbrz-nx h] r]] 'pre [tx-set x z 'pre]]]]    
-        [if [null? [xbrz-back [tz-head z]]]
-          null
-          [if [equal? 0 [xbrt-kfb? [xbrz-node h]]]
-            [tz [xbrz-back [tz-head z]] 'int [tx-set x z 'int]] 
-            [tz [xbrz-back [tz-head z]] 'pst [tx-set x z 'pst]]]]]]]] 
-
-[define [xbrz-last t cf]
-  [tz [xbrz null t [nx_def 0]] 'pst [zx_def 1]]]
-
-[define [xbrz-prev z cf]
-  [let [[h [tz-head z]]
-        [s [tz-state z]]
-        [x [tz-zx z]]]
-    [if [equal? 'pst s]
-      [let [[r [xbrt-right [xbrz-node h]]]]
-        [if [or [null? r] [cf r z]]
-          [tz h 'int [tx-set x z 'int]]
-          [tz [xbrz h r [nx-set [xbrz-nx h] r]] 'pst [tx-set x z 'pst]]]] 
-      [if [equal? 'int s]
-        [let [[l [xbrt-left [xbrz-node h]]]] 
-          [if [or [null? l] [cf l z]]
-            [tz h 'pre [tx-set x z 'pre]]
-            [tz [xbrz h l [nx-set [xbrz-nx h] l]] 'pst [tx-set x z 'pst]]]]    
-        [if [null? [xbrz-back [tz-head z]]]
-          null
-          [if [equal? 1 [xbrt-kfb? [xbrz-node h]]]
-            [tz [xbrz-back [tz-head z]] 'int [tx-set x z 'int]] 
-            [tz [xbrz-back [tz-head z]] 'pre [tx-set x z 'pre]]]]]]]] 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;[define [xbrz-first t cf]
+;  [tz [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+;[define [xbrz-last t cf]
+;  [tz [xbrz null t [nx_def 0]] 'pst [zx_def 1]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[define [stream<-xbrz tz]
-  [let [[xbrz-iter [gtz-iter tz]][tdp [gtz-cdp tz]][vtf [gtz-vtf tz]]]
-  [stream-filter [lambda [x] [not [void? x]]]
-    [stream-unfold
-      [lambda [x] [vtf x]]
-      [lambda [x] [not [null? x]]]
-      [lambda [x] [xbrz-iter x tdp]]
-      tz]]]]
-
-[define [rec-set t l]
-  [if [null? l] t
-    [let [[e [car l]]]
-      [rec-set [xbrt-set t e [cat "" e]] [cdr l]]]]]
-
-[define [xbrt<-stream t s]
-  [if [stream-null? s] t
-    [let [[e [stream-car s]]]
-      [xbrt<-stream [xbrt-set t [car e] [cdr e]] [stream-cdr s]]]]]
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;; deque ;;;;;;;;;;;;;;;;;;;;
 [define [mk-deq] void]
 [define [deq-head-push d] void]
 [define [deq-head-pop  d] void]
@@ -598,3 +383,4 @@ refactor gbk-sub-key use to account for streams
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
