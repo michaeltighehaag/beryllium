@@ -16,12 +16,12 @@ refactor gbk-sub-key use to account for streams
   [path-up "XBRT-core.rkt"]]
 
 [require bitsyntax]
-[require racket/generic]
 
 [provide [all-from-out "XBRT-core.rkt"]]
 [provide [all-defined-out]]
 
 [define [inn g r] [if [null? r] r [g r]]]
+[define [inn01 r] [if [null? r] 0 1]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -93,22 +93,33 @@ refactor gbk-sub-key use to account for streams
                   [if [null? r] 0 [+ [gbk-length [xbrt-key r]]
                                      [x_key_def-key_min_height [gnx_def-key_x [xbrt-gnx r]]]]]]]]
 
-[struct x_val_def  [val_count val_cum] #:transparent]
+[struct x_val_def  [val_count val_max_height val_min_height] #:transparent]
 [define [vx-f p l r]
   [x_val_def [+ [if [null? p] 0 1]
               [if [null? l] 0 [x_val_def-val_count [gnx_def-val_x [xbrt-gnx l]]]]
               [if [null? r] 0 [x_val_def-val_count [gnx_def-val_x [xbrt-gnx r]]]]]
-             0]]
+              [+ [if [null? p] 0 1]
+                 [max [if [null? l] 0 [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx l]]]]
+                      [if [null? r] 0 [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx r]]]]]]
+              [+ [if [null? p] 0 1]
+                 [min [if [null? l] 0 [x_val_def-val_min_height [gnx_def-val_x [xbrt-gnx l]]]]
+                      [if [null? r] 0 [x_val_def-val_min_height [gnx_def-val_x [xbrt-gnx r]]]]]]
+             ]]
 
-[struct x_node_def [node_count node_max_height node_min_height] #:transparent]
+[struct x_node_def [node_count node_leaf_count node_max_height node_min_height] #:transparent]
 [define [nx-f p l r]
-  [x_node_def [+ 1 [if [null? l] 0 [x_node_def-node_count [gnx_def-node_x [xbrt-gnx l]]]]
-                   [if [null? r] 0 [x_node_def-node_count [gnx_def-node_x [xbrt-gnx r]]]]]
-              [+ 1 [max [if [null? l] 0 [x_node_def-node_max_height [gnx_def-node_x [xbrt-gnx l]]]]
-                        [if [null? r] 0 [x_node_def-node_max_height [gnx_def-node_x [xbrt-gnx r]]]]]]
-              [+ 1 [min [if [null? l] 0 [x_node_def-node_min_height [gnx_def-node_x [xbrt-gnx l]]]]
-                        [if [null? r] 0 [x_node_def-node_min_height [gnx_def-node_x [xbrt-gnx r]]]]]]
-              ]]
+  [let [[ln [if [null? l] null [gnx_def-node_x [xbrt-gnx l]]]]
+        [rn [if [null? r] null [gnx_def-node_x [xbrt-gnx r]]]]]        
+    [x_node_def [+ 1 [if [null? l] 0 [x_node_def-node_count ln]]
+                     [if [null? r] 0 [x_node_def-node_count rn]]]
+                [if [and [null? l] [null? r]] 1 
+                  [+ [if [null? l] 0 [x_node_def-node_leaf_count ln]]
+                     [if [null? r] 0 [x_node_def-node_leaf_count rn]]]]
+                [+ 1 [max [if [null? l] 0 [x_node_def-node_max_height ln]]
+                          [if [null? r] 0 [x_node_def-node_max_height rn]]]]
+                [+ 1 [min [if [null? l] 0 [x_node_def-node_min_height ln]]
+                          [if [null? r] 0 [x_node_def-node_min_height rn]]]]
+                ]]]
 
 [struct gnx_def [key_x val_x node_x] #:transparent
   #:methods gen:xbrt_gnx
@@ -214,16 +225,53 @@ refactor gbk-sub-key use to account for streams
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[struct nx_def [key_depth] #:transparent
+[struct nx_def [key_depth val_depth] #:transparent
   #:methods gen:gnx
   [[define [nx-set gnx node]
-     [nx_def [+ [gbk-length [xbrt-key node]] [nx_def-key_depth gnx]]]]
+     [nx_def [+ [gbk-length [xbrt-key node]] [nx_def-key_depth gnx]]
+             [+ [if [null? [xbrt-val node]] 0 1] [nx_def-val_depth gnx]]]]
   ]]
 
-[struct zx_def [count_val] #:transparent
+[define [mk_nx_def t]
+  [nx_def [gbk-length [xbrt-key t]] 0]]
+
+
+[struct zx_f_def [val_count leaf_count] #:transparent
   #:methods gen:gzx
-  [[define [tx-set gzx z s] [zx_def [add1 [zx_def-count_val gzx]]]]
+  [[define [tx-set gzx nh nstate]
+     [let [[cn [xbrz-node nh]]]
+       [if [equal? nstate 'int] 
+         [zx_f_def [+ [inn01 [xbrt-val cn]] [zx_f_def-val_count gzx]]
+                   [+ [if [and [null? [xbrt-left cn]][null? [xbrt-right cn]]] 1 0]
+                      [zx_f_def-leaf_count gzx]]]
+         [zx_f_def [zx_f_def-val_count gzx] [zx_f_def-leaf_count gzx]]]]]
   ]]
+
+[define [mk_zx_f_def t]
+  [zx_f_def 
+    [inn01 [xbrt-val t]]
+    [if [and [null? [xbrt-left t]]
+             [null? [xbrt-right t]]
+             [not [null? [xbrt-val t]]]]
+      1 0]]]
+
+[struct zx_r_def [val_count leaf_count] #:transparent
+  #:methods gen:gzx
+  [[define [tx-set gzx nh nstate]
+     [let [[cn [xbrz-node nh]]]
+       [if [equal? nstate 'pst] 
+         [zx_r_def [+ [inn01 [xbrt-val cn]] [zx_r_def-val_count gzx]]
+                   [+ [if [and [null? [xbrt-left cn]][null? [xbrt-right cn]]] 1 0]
+                      [zx_r_def-leaf_count gzx]]]
+         [zx_r_def [zx_r_def-val_count gzx] [zx_r_def-leaf_count gzx]]]]]
+  ]]
+
+[define [mk_zx_r_def t]
+  [zx_r_def [inn01 [xbrt-val t]]
+          [if [and [null? [xbrt-left t]]
+                   [null? [xbrt-right t]]
+                   [not [null? [xbrt-val t]]]]
+              1 0]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define [xbrz_tdp_def n z] #f]
@@ -234,7 +282,7 @@ refactor gbk-sub-key use to account for streams
 [define [xbrz_vtf_def z]
   [list [tz-state z]
         [nx_def-key_depth [xbrz-nx [tz-head z]]]
-        [zx_def-count_val [tz-zx z]]
+        [zx_f_def-val_count [tz-zx z]]
         [xbrt-val [xbrz-node [tz-head z]]]
         ]]
 
@@ -266,6 +314,10 @@ refactor gbk-sub-key use to account for streams
       [if [null? v] [void] v]]
     [void]]]
 
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_fdv tz [] #:transparent
   #:methods gen:gtz
@@ -275,7 +327,7 @@ refactor gbk-sub-key use to account for streams
   ]]
 
 [define [mktz_fdv t]
-  [tz_fdv [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+  [tz_fdv [xbrz null t [mk_nx_def t]] 'pre [mk_zx_f_def t]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_fdd tz [] #:transparent
@@ -286,7 +338,7 @@ refactor gbk-sub-key use to account for streams
   ]]
 
 [define [mktz_fdd t]
-  [tz_fdd [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+  [tz_fdd [xbrz null t [mk_nx_def t]] 'pre [mk_zx_f_def t]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_ftt tz [] #:transparent
@@ -297,7 +349,7 @@ refactor gbk-sub-key use to account for streams
   ]]
 
 [define [mktz_ftt t]
-  [tz_ftt [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+  [tz_ftt [xbrz null t [mk_nx_def t]] 'pre [mk_zx_f_def t]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_rdd tz [] #:transparent
@@ -308,7 +360,7 @@ refactor gbk-sub-key use to account for streams
   ]]
 
 [define [mktz_rdd t]
-  [tz_rdd [xbrz null t [nx_def 0]] 'pst [zx_def 1]]]
+  [tz_rdd [xbrz null t [mk_nx_def t]] 'pst [mk_zx_r_def t]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_fdm tz [] #:transparent
@@ -319,7 +371,7 @@ refactor gbk-sub-key use to account for streams
   ]]
 
 [define [mktz_fdm t]
-  [tz_fdm [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+  [tz_fdm [xbrz null t [mk_nx_def t]] 'pre [mk_zx_f_def t]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_fdpv tz [] #:transparent
@@ -330,7 +382,7 @@ refactor gbk-sub-key use to account for streams
   ]]
 
 [define [mktz_fdpv t]
-  [tz_fdpv [xbrz null t [nx_def 0]] 'pre [zx_def 1]]]
+  [tz_fdpv [xbrz null t [mk_nx_def t]] 'pre [mk_zx_f_def t]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -394,3 +446,69 @@ refactor gbk-sub-key use to account for streams
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [xbrt-enc-xml x]
+  [xbrt-enc-xml-help-node xbrt_test_root "" x]]
+
+[define [xbrt-enc-xml-help-node t kp n]
+  [if [string? n]
+    [xbrt-set t kp [list n]]
+    [let [[nl [[sxpath "/child::node()" [list]] n]]]
+      [let [[kpl [if [equal? 1 [length nl]] [list "0"] [tns [length nl]]]]
+            [nt [xbrt-set t kp [list [car n] [[sxpath "/attribute::*" [list]] n]]]]]
+        [xbrt-enc-xml-help-list nt kp nl kpl]]]
+  ]]
+[define [xbrt-enc-xml-help-list t kp nl kl]
+  [if [null? nl] t
+    [let [[nt [xbrt-enc-xml-help-node t [cat kp [car kl]] [car nl]]]]
+      [xbrt-enc-xml-help-list nt kp [cdr nl] [cdr kl]]]]]
+      
+
+[define [tns l] [for/list [[i [in-range 0 l]]] [pad i [integer-length [sub1 l]] 2]]]
+
+[define xt [cadr [ssax:xml->sxml [open-input-string
+[cat "<cell tag=\"a\">"
+       "<cell tag=\"s0\">"
+         "<cell tag=\"x1\"></cell>"
+         "<cell tag=\"x2\"></cell>"
+         "<cell tag=\"x3\"></cell>"
+       "</cell>"
+       "<cell tag=\"s1\">"
+         "<cell tag=\"t1\"></cell>"
+       "</cell>"
+       "<cell tag=\"s2\">"
+         "<cell tag=\"y1\"></cell>"
+         "<cell tag=\"y2\">"
+           "<cell tag=\"z1\"></cell>"
+           "<cell tag=\"z2\"></cell>"
+         "</cell>"
+         "<cell tag=\"y3\"></cell>"
+       "</cell>"
+     "</cell>"]] [list]]]]
+
+;[displayln [eval [read [open-input-string "[list 1 2 3]"]]]]
+
+[define [xbrz_vtf_enc-xml z]
+[if [and [equal? [tz-state z] 'pre] [not [null? [xbrt-val [xbrz-node [tz-head z]]]]]]
+  [let [[cn [xbrz-node [tz-head z]]]]
+    [list ;[tz-state z]
+          ;[zx_f_def-val_count [tz-zx z]]
+          [zx_f_def-leaf_count [tz-zx z]]
+          [x_node_def-node_leaf_count [gnx_def-node_x [xbrt-gnx cn]]]
+          [nx_def-val_depth [xbrz-nx [tz-head z]]]
+          [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx cn]]]
+          [xbrt-val cn]        
+          ]]
+  [void]]]
+
+[struct tz_enc-xml tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_enc-xml]
+  ]]
+
+[define [mktz_enc-xml t]
+  [tz_enc-xml [xbrz null t [mk_nx_def t]] 'pre [mk_zx_f_def t]]]
+
+[disp-stream [stream<-xbrz [mktz_enc-xml [xbrt-enc-xml xt]]]]
