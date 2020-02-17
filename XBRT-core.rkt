@@ -199,7 +199,7 @@ refactor gbk-sub-key use to account for streams
       [let [[r [xbrt-right [xbrz-node h]]]]
         [if [or [null? r] [cf r z]]
           [tz h 'int [tx-set x h 'int]]
-          [let [[nh [xbrz h r [nx-set [xbrz-nx h] r]]]] [tz nh 'pst [tx-set x z 'pst]]]]] 
+          [let [[nh [xbrz h r [nx-set [xbrz-nx h] r]]]] [tz nh 'pst [tx-set x nh 'pst]]]]] 
       [if [equal? 'int s]
         [let [[l [xbrt-left [xbrz-node h]]]] 
           [if [or [null? l] [cf l z]]

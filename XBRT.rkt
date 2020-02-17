@@ -259,7 +259,7 @@ refactor gbk-sub-key use to account for streams
   #:methods gen:gzx
   [[define [tx-set gzx nh nstate]
      [let [[cn [xbrz-node nh]]]
-       [if [equal? nstate 'pst] 
+       [if [equal? nstate 'int] 
          [zx_r_def [+ [inn01 [xbrt-val cn]] [zx_r_def-val_count gzx]]
                    [+ [if [and [null? [xbrt-left cn]][null? [xbrt-right cn]]] 1 0]
                       [zx_r_def-leaf_count gzx]]]
@@ -285,7 +285,12 @@ refactor gbk-sub-key use to account for streams
         [zx_f_def-val_count [tz-zx z]]
         [xbrt-val [xbrz-node [tz-head z]]]
         ]]
-
+[define [xbrz_vtr_def z]
+  [list [tz-state z]
+        [nx_def-key_depth [xbrz-nx [tz-head z]]]
+        [zx_r_def-val_count [tz-zx z]]
+        [xbrt-val [xbrz-node [tz-head z]]]
+        ]]
 [define [xbrz_vtf_tst z]
   [let [[cn [xbrz-node [tz-head z]]]]
   [if [and [equal? [tz-state z] 'int]] 
@@ -356,7 +361,7 @@ refactor gbk-sub-key use to account for streams
   #:methods gen:gtz
   [[define [gtz-iter gtz] xbrz-prev]
    [define [gtz-cdp gtz] xbrz_tdp_def]
-   [define [gtz-vtf gtz] xbrz_vtf_def]
+   [define [gtz-vtf gtz] xbrz_vtr_def]
   ]]
 
 [define [mktz_rdd t]
