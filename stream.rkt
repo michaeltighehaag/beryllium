@@ -275,6 +275,18 @@ including some examples taken from the documentation for srfi/41
     [disp-stream res dn]
     res]]   
 
+[define [stream-argext r f]
+  [lambda [s] [stream-argext-help r f [void] s]]]
+
+[define [stream-argext-help r f c s]
+  [if [stream-null? s] c
+    [if [equal? c [void]]
+      [stream-argext-help r f [stream-car s] [stream-cdr s]]
+      [if [r [f [stream-car s]] [f c]]
+        [stream-argext-help r f [stream-car s] [stream-cdr s]]
+        [stream-argext-help r f c [stream-cdr s]]]]]]
+
+
 ;********************************************************************************************
 ;*** Tests ***
 ;********************************************************************************************

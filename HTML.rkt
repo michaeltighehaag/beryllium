@@ -146,7 +146,7 @@
 
 
 
-[define [mk-html-table xht yht table_id]
+[define [mk-html-table xht yht table_id dbf]
   [let* [[xpht [xbrt-enc-xml xht]]
          [ypht [xbrt-enc-xml yht]]
          [xhth [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx xpht]]]]
@@ -156,7 +156,7 @@
          [iyhb [mk-header_enc-xml ypht table_id]]
          [yhb  [stream-map transpose-cells [flip-block-x [shift-block xhth 0 iyhb]]]]
          [db   [shift-block yhth xhth
-               [mk-table-stream-block test-df table_id
+               [mk-table-stream-block dbf table_id
                  [cell-sort 1 [cell-filter-leaves xhb]]
                  [cell-sort 2 [cell-filter-leaves yhb]]]]]]
     [set-block  [stream-append xhb yhb db]]]]
@@ -180,4 +180,4 @@
     ]]
 
 [define [html-table-test]
-  [file<-html_table "html-table-test2" [mk-html-table xt yt "tf"]]]
+  [file<-html_table "html-table-test2" [mk-html-table xt yt "tf" test-df]]]
