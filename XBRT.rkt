@@ -491,7 +491,20 @@ refactor gbk-sub-key use to account for streams
        "</cell>"
      "</cell>"]] [list]]]]
 
-;[displayln [eval [read [open-input-string "[list 1 2 3]"]]]]
+[define yt [cadr [ssax:xml->sxml [open-input-string
+[cat "<cell tag=\"a0\">"
+       "<cell tag=\"s0\">"
+       "</cell>"
+       "<cell tag=\"s1\">"
+         "<cell tag=\"t1\"></cell>"
+       "</cell>"
+       "<cell tag=\"s2\">"
+         "<cell tag=\"y1\"></cell>"
+         "<cell tag=\"y2\">"
+         "</cell>"
+         "<cell tag=\"y3\"></cell>"
+       "</cell>"
+     "</cell>"]] [list]]]]
 
 [define [xbrz_vtf_enc-xml z]
   [if [and [equal? [tz-state z] 'pre] [not [null? [xbrt-val [xbpz-node [tz-head z]]]]]]
@@ -508,35 +521,26 @@ refactor gbk-sub-key use to account for streams
 [define [mktz_enc-xml t]
   [tz_enc-xml [xbpz null t [mk_npx_def t]] 'pre [mk_zx_f_def t]]]
 
-[define [bmod h tn]
+[define [cell_mod h tn]
   [lambda [z]
     [let* [[cn [xbpz-node [tz-head z]]]
            [mh [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx cn]]]]]
       [list
-        z
-        [cadar [caddr [xbrt-val cn]]]
+        [list [cadar [caddr [xbrt-val cn]]] mh z]
         tn
+        [+ 1 [zx_f_def-leaf_count [tz-tx z]]]
+        [x_node_def-node_leaf_count [gnx_def-node_x [xbrt-gnx cn]]]
         [+ 1 [npx_def-val_depth [xbpz-bpx [tz-head z]]]]
         [if [equal? 1 mh] [+ mh [- h [+ 1 [npx_def-val_depth [xbpz-bpx [tz-head z]]]] ]] 1]
-        [+ 1 [zx_f_def-leaf_count [tz-tx z]]]
-        [x_node_def-node_leaf_count [gnx_def-node_x [xbrt-gnx cn]]] mh]
+        ]
       ]]]
 
-[define [bmod2  tn]
-  [lambda [z]
-    [let* [[cn [xbpz-node [tz-head z]]]
-           [mh [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx cn]]]]]
-      [list
-        [cadar [caddr [xbrt-val cn]]]
-        tn
-        [tz-tx z]
-        [xbrt-gnx cn]
-      ]]]]
+[define [mk-header_enc-xml t table_id]
+  [let* [;[t [xbrt-enc-xml x]]
+         [h [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx t]]]]]
+    [stream-map [cell_mod h table_id]
+    [stream<-xbrz [mktz_enc-xml t]]]]]
 
+[define [disp-cell x][cons [caar x][cdr x]]]
 
-[define [mk-cell-block t tn]
-  [let [[h [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx [xbrt-enc-xml xt]]]]]]
-    [stream-map [bmod h tn]
-    [stream<-xbrz [mktz_enc-xml [xbrt-enc-xml xt]]]]]]
-
-[disp-stream [stream-map cdr [mk-cell-block xt "tf"]]]
+;[disp-stream [stream-map disp-cell [mk-header_enc-xml xt "tf"]]]
