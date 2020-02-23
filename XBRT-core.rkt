@@ -148,9 +148,9 @@ refactor gbk-sub-key use to account for streams
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[struct xbrz [back node nx] #:transparent]
+[struct xbpz [back node bpx] #:transparent]
 
-[struct tz [head state zx] #:transparent]
+[struct tz [head state tx] #:transparent]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define-generics gnx
@@ -172,21 +172,21 @@ refactor gbk-sub-key use to account for streams
 [define [xbrz-next z cf]
   [let [[h [tz-head z]]
         [s [tz-state z]]
-        [x [tz-zx z]]]
+        [x [tz-tx z]]]
     [if [equal? 'pre s]
-      [let [[l [xbrt-left [xbrz-node h]]]]
+      [let [[l [xbrt-left [xbpz-node h]]]]
         [if [or [null? l] [cf l z]]
           [tz h 'int [tx-set x h 'int]]
-          [let [[nh [xbrz h l [nx-set [xbrz-nx h] l]]]] [tz nh 'pre [tx-set x nh 'pre]]]]] 
+          [let [[nh [xbpz h l [nx-set [xbpz-bpx h] l]]]] [tz nh 'pre [tx-set x nh 'pre]]]]] 
       [if [equal? 'int s]
-        [let [[r [xbrt-right [xbrz-node h]]]] 
+        [let [[r [xbrt-right [xbpz-node h]]]] 
           [if [or [null? r] [cf r z]]
             [tz h 'pst [tx-set x h 'pst]]
-            [let [[nh [xbrz h r [nx-set [xbrz-nx h] r]]]] [tz nh 'pre [tx-set x nh 'pre]]]]]    
-        [let [[pnh [xbrz-back [tz-head z]]]]
+            [let [[nh [xbpz h r [nx-set [xbpz-bpx h] r]]]] [tz nh 'pre [tx-set x nh 'pre]]]]]    
+        [let [[pnh [xbpz-back [tz-head z]]]]
           [if [null? pnh]
             null
-            [if [equal? 0 [xbrt-kfb? [xbrz-node h]]]
+            [if [equal? 0 [xbrt-kfb? [xbpz-node h]]]
               [tz pnh 'int [tx-set x pnh 'int]] 
               [tz pnh 'pst [tx-set x pnh 'pst]]]]]]]]] 
 
@@ -194,21 +194,21 @@ refactor gbk-sub-key use to account for streams
 [define [xbrz-prev z cf]
   [let [[h [tz-head z]]
         [s [tz-state z]]
-        [x [tz-zx z]]]
+        [x [tz-tx z]]]
     [if [equal? 'pst s]
-      [let [[r [xbrt-right [xbrz-node h]]]]
+      [let [[r [xbrt-right [xbpz-node h]]]]
         [if [or [null? r] [cf r z]]
           [tz h 'int [tx-set x h 'int]]
-          [let [[nh [xbrz h r [nx-set [xbrz-nx h] r]]]] [tz nh 'pst [tx-set x nh 'pst]]]]] 
+          [let [[nh [xbpz h r [nx-set [xbpz-bpx h] r]]]] [tz nh 'pst [tx-set x nh 'pst]]]]] 
       [if [equal? 'int s]
-        [let [[l [xbrt-left [xbrz-node h]]]] 
+        [let [[l [xbrt-left [xbpz-node h]]]] 
           [if [or [null? l] [cf l z]]
             [tz h 'pre [tx-set x h 'pre]]
-            [let [[nh [xbrz h l [nx-set [xbrz-nx h] l]]]] [tz nh 'pst [tx-set x nh 'pst]]]]]    
-        [let [[pnh [xbrz-back [tz-head z]]]]
+            [let [[nh [xbpz h l [nx-set [xbpz-bpx h] l]]]] [tz nh 'pst [tx-set x nh 'pst]]]]]    
+        [let [[pnh [xbpz-back [tz-head z]]]]
           [if [null? pnh]
             null
-            [if [equal? 1 [xbrt-kfb? [xbrz-node h]]]
+            [if [equal? 1 [xbrt-kfb? [xbpz-node h]]]
               [tz pnh 'int [tx-set x pnh 'int]] 
               [tz pnh 'pre [tx-set x pnh 'pre]]]]]]]]] 
 

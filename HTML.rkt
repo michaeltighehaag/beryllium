@@ -2,7 +2,8 @@
 [require html-writing]
 [require "common.rkt"]
 [require "stream.rkt"]
-
+[require racket/require
+  [path-up "XBRT.rkt"]]
 [provide [all-from-out html-writing]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -100,6 +101,8 @@
     [list<-stream [stream-map mk-table-div-element ds]]]]
 
 
+[define [test-df p x y xh yh] [list [cat "h" xh "v" yh "?"] p x 1 y 1 1]]
+
 [define [mk-table-stream-block df p row-strm col-strm]
   [let [[nrs [stream-zip row-strm  [stream-from 1]]]
         [ncs [stream-zip col-strm [stream-from 1]]]]
@@ -113,47 +116,7 @@
 
 
 
-[define [walk-header-tree t [p 0]]
-  [wht-h t [list] 1 1 [add1  [tree-depth t]] p]]
 
-[define [leaf-count t]
-  [if [null? [cdr t]] 1
-    [apply + [map leaf-count [cdr t]]]]]
-   
-[define [tree-depth t]
-  [if [null? [cdr t]] 1
-    [+ 1 [apply max [map tree-depth [cdr t]]]]]]
-
-[define [wht-h t r lev i d p]
-  [let* [[slev [if [equal? p 1] 1 [- d [+ [sub1 lev] [tree-depth t]]]]]
-         [n [cons [list [car t] lev slev i [leaf-count t]] r]]]
-    [if [null? [cdr t]] n [wht-l [cdr t] n [+ slev lev] i d p]]]]
-
-[define [wht-l l r lev i d p]
-  [let [[n [wht-h [car l] r lev i d p]]]
-    [if [null? [cdr l]] n [wht-l [cdr l] n lev [+ i [leaf-count [car l]]] d p]]]]
-
-
-
-
-[define [mk-table-header-block t tid ]
-  [stream<-list
-    [map [lambda [x] [cons [car x] [cons tid [cdr x]]]]
-         [walk-header-tree t 0]]]]
-
-[define [shift-block xs ys s]
-  [stream-map
-    [lambda [z] [list [car z] [cadr z]
-                  [+ xs [list-ref z 2]] [list-ref z 3]
-                  [+ ys [list-ref z 4]] [list-ref z 5]]]  s]]
-
-[define [flip-block-x s xmin xmax]
-  [stream-map [lambda [z]
-    [append [take z 4] [list [+ 1 xmin xmax [- [+ [list-ref z 4][list-ref z 5]]]] [list-ref z 5]]]] s]]
-
-[define [flip-block-y s ymin ymax]
-  [stream-map [lambda [z]
-    [append [take z 2] [cons [+ 1 ymin ymax [- [+ [list-ref z 2][list-ref z 3]]]] [drop z 3]]]]  s]]
 
 
 
@@ -169,13 +132,25 @@
         [stream-argext-help r f [stream-car s] [stream-cdr s]]
         [stream-argext-help r f c [stream-cdr s]]]]]]
 
-[define [transpose-cells l]
-  [list [car l] [cadr l] [list-ref l 4] [list-ref l 5] [list-ref l 2][list-ref l 3]]]
+[define xcminf [let [[f [lambda [z] [list-ref z 4]]]] [lambda [s] [f [[stream-argext < f] s]]]]]
+[define xcmaxf [let [[f [lambda [z] [+ [list-ref z 4] [sub1 [list-ref z 5]]]]]] [lambda [s] [f [[stream-argext > f] s]]]]]
 
-[define xcminf [stream-argext < [lambda [z] [list-ref z 4]]]]
-[define xcmaxf [stream-argext > [lambda [z] [+ [list-ref z 4] [sub1 [list-ref z 5]]]]]]
-[define ycminf [stream-argext < [lambda [z] [list-ref z 2]]]]
-[define ycmaxf [stream-argext > [lambda [z] [+ [list-ref z 2] [sub1 [list-ref z 3]]]]]]
+[define [shift-block xs ys s]
+  [stream-map
+    [lambda [z] [list [car z] [cadr z]
+                  [+ xs [list-ref z 2]] [list-ref z 3]
+                  [+ ys [list-ref z 4]] [list-ref z 5] [list-ref z 6]]]  s]]
+
+[define [flip-block-x s]
+  [let [[xmin [xcminf s]][xmax [xcmaxf s]]]
+    [stream-map [lambda [z]
+    [append [take z 4] [list [+ 1 xmin xmax [- [+ [list-ref z 4][list-ref z 5]]]] [list-ref z 5] [list-ref z 6]]]] s]]]
+
+[define [transpose-cells l]
+  [list [car l] [cadr l] [list-ref l 4] [list-ref l 5] [list-ref l 2][list-ref l 3] [list-ref l 6]]]
+
+
+
 
 
 [define [set-block s]
@@ -189,42 +164,36 @@
   [lambda [x y] [pred [list-ref x n] [list-ref y n]]]]
 
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-[define test-header
-  [list "a"
-    [list [list "s1" [html:br [list] [list]] "new line"] [list "x1"] [list "x2"] [list "x3"]]
-    [list "s2" [list "y1"] [list "y2" [list "z1"][list "z2"]] [list "y3"]]]]
 
-[define [test-df p x y xh yh] [list [cat "h" xh "v" yh "?"] p x 1 y 1]]
 
+;[html-table-test]
 [define [html-table-test]                                            
-  [let* [[ts2 [shift-block 0 4 [mk-table-header-block test-header "tf"]]]
-         [ts3 [stream-map transpose-cells
-              [flip-block-x ts2 [list-ref [xcminf ts2] 4] [list-ref [xcmaxf ts2] 4]]]]
-         [ts4 [stream-map car [stream-sort [pred-pos-sort < 4] [stream-filter [val-pos-filter 1 5] ts2 ]]]]
-         [ts5 [stream-map car [stream-sort [pred-pos-sort < 2] [stream-filter [val-pos-filter 1 3] ts3 ]]]]
+  [let* [[its [mk-cell-block xt "tf"]]
+         [ts2 [shift-block 0 4 [stream-map cdr its]]]
+         [ts3 [stream-map transpose-cells [flip-block-x ts2 ]]]
+         [ts4 [stream-map car [stream-sort [pred-pos-sort < 4] [stream-filter [val-pos-filter 1 6] ts2 ]]]]
+         [ts5 [stream-map car [stream-sort [pred-pos-sort < 2] [stream-filter [val-pos-filter 1 6] ts3 ]]]]
          [ts6 [shift-block 4 4 [mk-table-stream-block test-df "tf" ts4 ts5]]]
          [tf [set-block  [stream-append ts2 ts3 ts6]]]
-         [name "html-table-test3"]
+         [name "html-table-test"]
          [out-file-html [open-output-file [cat "../" name ".html"] #:exists 'replace]]]
+
+    [disp-stream [stream-map cdr its]]
+    [disp-stream ts2]
+    [disp-stream ts3]
     [write-html
       [mk-html [list] [list]
         [list [mk-css-link [cat "./" name ".css"]]]
         [list]
-        [list
-          [list [html:p [list] [list
-                [html:span [list [list 'class "diff-mod"]] [list "T"]]
-                "est"
-                [html:span [list [list 'class "diff-gap"]] [list "ing"]]]]]
-          [mk-table-divs tf]
-          ]]
+        [list [mk-table-divs tf]]]
       out-file-html]
     [close-output-port out-file-html]
     [file<-stream [cat "../" name ".css"] displayln
       [stream-append diff-css table-div-css [mk-table-css [stream tf ]]]]
     ]]
-
-;[html-table-test]
 
