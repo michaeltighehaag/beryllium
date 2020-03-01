@@ -544,3 +544,50 @@ refactor gbk-sub-key use to account for streams
 [define [disp-cell x][cons [caar x][cdr x]]]
 
 ;[disp-stream [stream-map disp-cell [mk-header_enc-xml xt "tf"]]]
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [xbrt-gxor-fix x][void]]
+[define [xbrt-gxor n1 n2]
+  [let [[l1 [xbrt-left n1]]
+        [r1 [xbrt-right n1]]
+        [v1 [xbrt-val n1]]
+        [l2 [xbrt-left n2]]
+        [r2 [xbrt-right n2]]
+        [v2 [xbrt-val n2]]]
+    [let [[nl [xbrt-gxor l1 l2]]
+          [nr [xbrt-gxor r1 r2]]
+          [nv [if [null? v1] v2 [if [null? v2] v1 null]]]]
+      [if [null? nv]
+        [if [null? nr]
+          [if [null? nl]
+            null
+            [list]]
+          [if [null? nl]
+            [list]
+            null]]
+        [xbrt null nv nl nr]]]]]
+            
+[define [xbrt-gand-fix x][void]]      
+[define [xbrt-gand n1 n2 f]
+  [let [[l1 [xbrt-left n1]]
+        [r1 [xbrt-right n1]]
+        [v1 [xbrt-val n1]]
+        [l2 [xbrt-left n2]]
+        [r2 [xbrt-right n2]]
+        [v2 [xbrt-val n2]]]
+    [let [[nl [xbrt-gand l1 l2]]
+          [nr [xbrt-gand r1 r2]]
+          [nv [f v1 v2]]]
+      [if [null? nv]
+        [if [null? nr]
+          [if [null? nl]
+            null
+            [list]]
+          [if [null? nl]
+            [list]
+            null]]
+        [xbrt null nv nl nr]]]]]
+            
+        
