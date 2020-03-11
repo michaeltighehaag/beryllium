@@ -154,7 +154,7 @@
          [ixhb [mk-header_enc-xml xpht table_id]]
          [xhb  [shift-block yhth 0 ixhb]]
          [iyhb [mk-header_enc-xml ypht table_id]]
-         [yhb  [stream-map transpose-cells [flip-block-x [shift-block xhth 0 iyhb]]]]
+         [yhb  [stream-map transpose-cells [shift-block xhth 0 iyhb]]]
          [db   [shift-block yhth xhth
                [mk-table-stream-block dbf table_id
                  [cell-sort 1 [cell-filter-leaves xhb]]
