@@ -526,7 +526,7 @@ refactor gbk-sub-key use to account for streams
     [let* [[cn [xbpz-node [tz-head z]]]
            [mh [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx cn]]]]]
       [list
-        [list [cadar [caddr [xbrt-val cn]]] mh z]
+        [list [cadar [caddr [xbrt-val cn]]] mh z [taglist [tz-head z]] [xbpz-back [tz-head z]]]
         tn
         [+ 1 [zx_f_def-leaf_count [tz-tx z]]]
         [x_node_def-node_leaf_count [gnx_def-node_x [xbrt-gnx cn]]]
@@ -542,7 +542,10 @@ refactor gbk-sub-key use to account for streams
     [stream<-xbrz [mktz_enc-xml t]]]]]
 
 [define [disp-cell x][cons [caar x][cdr x]]]
-
+[define [enc-xml_get-tag x]  [xbrt-val x]]
+[define [taglist w]
+  [if [null? [xbpz-back w]] [list [enc-xml_get-tag [xbpz-node w]]]
+    [cons [enc-xml_get-tag [xbpz-node w]] [taglist [xbpz-back w]]]]]
 ;[disp-stream [stream-map disp-cell [mk-header_enc-xml xt "tf"]]]
 
 
