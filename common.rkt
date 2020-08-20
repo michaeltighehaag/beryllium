@@ -23,11 +23,11 @@ A variety of useful functions.
 
 [define [file<-string fn str [ex 'replace]]
   [call-with-output-file fn [lambda [out] [display str out]] #:exists ex]]
-;[define [string<-file fn] [void]'text]
-; [call-with-input-file fn [lambda [in] [display str out]] #:exists ex]]
-
+[define [string<-file fn]
+  [port->string [open-input-file fn]]]
 [define [sxml<-filename fn [nsl null]] [call-with-input-file fn [lambda [in] [ssax:xml->sxml in nsl]]]]
 [define [sxml<-string str [nsl null]] [ssax:xml->sxml [open-input-string str] nsl]]
+
 [define [jsx<-filename fn] [call-with-input-file fn [lambda [in] [json->sxml in ]]]]
 [define [jsx<-string str] [json->sxml [open-input-string str]]]
 
@@ -90,6 +90,7 @@ A variety of useful functions.
 ;*******************************************************************************************
 [define cat string-append]
 ;*******************************************************************************************
+
 
 ;;;
 [define [nth-tsv n] [lambda [x] [list-ref [regexp-match* #rx"[^\t\n]*" x] [* 2 n]]]]

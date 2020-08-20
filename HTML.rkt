@@ -40,6 +40,8 @@
       [html:body body-attr-list body-list]
   ]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define [mk-css-link loc]
   [html:link
     [list [cons 'rel "stylesheet"][cons 'type "text/css"][cons 'href loc]]
@@ -100,6 +102,8 @@
     [list [cons 'class "grid-container"]]
     [list<-stream [stream-map mk-table-div-element ds]]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [test-df p x y xh yh] [list [list [cat "h" xh "v" yh "?"]] p x 1 y 1 1]]
 

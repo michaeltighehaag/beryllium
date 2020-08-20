@@ -36,7 +36,7 @@ refactor gbk-sub-key use to account for streams
 
 [define-generics gxbrt
   [xbrt-set gxbrt k v]
-  [xbrt-nset gxbrt n v]
+  [xbrt-nset gxbrt n]
   [xbrt-get gxbrt k]
   [xbrt-xget gxbrt k]
   [xbrt-nget gxbrt k]
