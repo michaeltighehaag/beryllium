@@ -38,8 +38,8 @@ refactor gbk-sub-key use to account for streams
   [xbrt-set gxbrt k v]
   [xbrt-nset gxbrt n]
   [xbrt-get gxbrt k]
-  [xbrt-xget gxbrt k]
   [xbrt-nget gxbrt k]
+  [xbrt-xget gxbrt k]
   [xbrt-del gxbrt k]
 ]
 

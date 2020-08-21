@@ -236,42 +236,25 @@ refactor gbk-sub-key use to account for streams
   [npx_def [gbk-length [xbrt-key t]] 0]]
 
 
-[struct zx_f_def [val_count leaf_count] #:transparent
+[struct zx_def [val_count leaf_count] #:transparent
   #:methods gen:gzx
   [[define [tx-set gzx nh nstate]
      [let [[cn [xbpz-node nh]]]
        [if [equal? nstate 'int] 
-         [zx_f_def [+ [inn01 [xbrt-val cn]] [zx_f_def-val_count gzx]]
-                   [+ [if [and [null? [xbrt-left cn]][null? [xbrt-right cn]]] 1 0]
-                      [zx_f_def-leaf_count gzx]]]
-         [zx_f_def [zx_f_def-val_count gzx] [zx_f_def-leaf_count gzx]]]]]
+         [zx_def [+ [inn01 [xbrt-val cn]] [zx_def-val_count gzx]]
+                 [+ [if [and [null? [xbrt-left cn]][null? [xbrt-right cn]]] 1 0]
+                    [zx_def-leaf_count gzx]]]
+         [zx_def [zx_def-val_count gzx]
+                 [zx_def-leaf_count gzx]]]]]
   ]]
 
-[define [mk_zx_f_def t]
-  [zx_f_def 
+[define [mk_zx_def t]
+  [zx_def 
     [inn01 [xbrt-val t]]
     [if [and [null? [xbrt-left t]]
              [null? [xbrt-right t]]
              [not [null? [xbrt-val t]]]]
       1 0]]]
-
-[struct zx_r_def [val_count leaf_count] #:transparent
-  #:methods gen:gzx
-  [[define [tx-set gzx nh nstate]
-     [let [[cn [xbpz-node nh]]]
-       [if [equal? nstate 'int] 
-         [zx_r_def [+ [inn01 [xbrt-val cn]] [zx_r_def-val_count gzx]]
-                   [+ [if [and [null? [xbrt-left cn]][null? [xbrt-right cn]]] 1 0]
-                      [zx_r_def-leaf_count gzx]]]
-         [zx_r_def [zx_r_def-val_count gzx] [zx_r_def-leaf_count gzx]]]]]
-  ]]
-
-[define [mk_zx_r_def t]
-  [zx_r_def [inn01 [xbrt-val t]]
-          [if [and [null? [xbrt-left t]]
-                   [null? [xbrt-right t]]
-                   [not [null? [xbrt-val t]]]]
-              1 0]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define [xbrz_tdp_def n z] #f]
@@ -279,104 +262,26 @@ refactor gbk-sub-key use to account for streams
 [define [xbrz_tdp_tst n z] [< 3 [npx_def-key_depth [xbpz-bpx [tz-head z]]]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[define [xbrz_vtf_def z]
-  [list [tz-state z]
-        [npx_def-key_depth [xbpz-bpx [tz-head z]]]
-        [zx_f_def-val_count [tz-tx z]]
-        [xbrt-val [xbpz-node [tz-head z]]]
-        ]]
-[define [xbrz_vtr_def z]
-  [list [tz-state z]
-        [npx_def-key_depth [xbpz-bpx [tz-head z]]]
-        [zx_r_def-val_count [tz-tx z]]
-        [xbrt-val [xbpz-node [tz-head z]]]
-        ]]
-[define [xbrz_vtf_tst z]
-  [let [[cn [xbpz-node [tz-head z]]]]
-  [if [and [equal? [tz-state z] 'int]] 
-    [list [tz-state z]
-          [npx_def-key_depth [xbpz-bpx [tz-head z]]]
-          [xbrt-val cn]
-          [x_val_def-val_count [gnx_def-val_x [xbrt-gnx cn]]]
-          ] 
-    [void]]]]
-
-[define [xbrz_vtf_val z]
-  [if [equal? [tz-state z] 'pre]
-    [let [[v[xbrt-val [xbpz-node [tz-head z]]]]]
-      [if [null? v] [void] [list [cdr v]]]]
-    [void]]]
-
-[define [xbrz_vtf_main z]
-  [if [equal? [tz-state z] 'pre]
-    [let [[v[xbrt-val [xbpz-node [tz-head z]]]]]
-      [if [null? v] [void] [cons [string<-rbk [xbrt-key [xbpz-node [tz-head z]]]] v]]]
-    [void]]]
-
 [define [xbrz_vtf_pre_val z]
   [if [equal? [tz-state z] 'pre]
     [let [[v [xbrt-val [xbpz-node [tz-head z]]]]]
       [if [null? v] [void] v]]
     [void]]]
 
+[define [xbrz_vtf_def z]
+  [list [tz-state z]
+        [npx_def-key_depth [xbpz-bpx [tz-head z]]]
+        [zx_def-val_count [tz-tx z]]
+        [zx_def-leaf_count [tz-tx z]]
+        [x_val_def-val_count [gnx_def-val_x [xbrt-gnx [xbpz-node [tz-head z]]]]]
+        [xbrt-val [xbpz-node [tz-head z]]]
+        ]]
 
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[struct tz_fdv tz [] #:transparent
-  #:methods gen:gtz
-  [[define [gtz-iter gtz] xbrz-next]
-   [define [gtz-cdp gtz] xbrz_tdp_def]
-   [define [gtz-vtf gtz] xbrz_vtf_val]
-  ]]
-
-[define [mktz_fdv t]
-  [tz_fdv [xbpz null t [mk_npx_def t]] 'pre [mk_zx_f_def t]]]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[struct tz_fdd tz [] #:transparent
-  #:methods gen:gtz
-  [[define [gtz-iter gtz] xbrz-next]
-   [define [gtz-cdp gtz] xbrz_tdp_def]
-   [define [gtz-vtf gtz] xbrz_vtf_def]
-  ]]
-
-[define [mktz_fdd t]
-  [tz_fdd [xbpz null t [mk_npx_def t]] 'pre [mk_zx_f_def t]]]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[struct tz_ftt tz [] #:transparent
-  #:methods gen:gtz
-  [[define [gtz-iter gtz] xbrz-next]
-   [define [gtz-cdp gtz] xbrz_tdp_tst]
-   [define [gtz-vtf gtz] xbrz_vtf_tst]
-  ]]
-
-[define [mktz_ftt t]
-  [tz_ftt [xbpz null t [mk_npx_def t]] 'pre [mk_zx_f_def t]]]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[struct tz_rdd tz [] #:transparent
-  #:methods gen:gtz
-  [[define [gtz-iter gtz] xbrz-prev]
-   [define [gtz-cdp gtz] xbrz_tdp_def]
-   [define [gtz-vtf gtz] xbrz_vtr_def]
-  ]]
-
-[define [mktz_rdd t]
-  [tz_rdd [xbpz null t [mk_npx_def t]] 'pst [mk_zx_r_def t]]]
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[struct tz_fdm tz [] #:transparent
-  #:methods gen:gtz
-  [[define [gtz-iter gtz] xbrz-next]
-   [define [gtz-cdp gtz] xbrz_tdp_def]
-   [define [gtz-vtf gtz] xbrz_vtf_main]
-  ]]
-
-[define [mktz_fdm t]
-  [tz_fdm [xbpz null t [mk_npx_def t]] 'pre [mk_zx_f_def t]]]
+[define [xbrz_vtf_main z]
+  [if [equal? [tz-state z] 'pre]
+    [let [[v[xbrt-val [xbpz-node [tz-head z]]]]]
+      [if [null? v] [void] [cons [string<-rbk [xbrt-key [xbpz-node [tz-head z]]]] v]]]
+    [void]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct tz_fdpv tz [] #:transparent
@@ -387,7 +292,52 @@ refactor gbk-sub-key use to account for streams
   ]]
 
 [define [mktz_fdpv t]
-  [tz_fdpv [xbpz null t [mk_npx_def t]] 'pre [mk_zx_f_def t]]]
+  [tz_fdpv [xbpz null t [mk_npx_def t]] 'pre [mk_zx_def t]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct tz_fdd tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_def]
+  ]]
+
+[define [mktz_fdd t]
+  [tz_fdd [xbpz null t [mk_npx_def t]] 'pre [mk_zx_def t]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct tz_rdd tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-prev]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_def]
+  ]]
+
+[define [mktz_rdd t]
+  [tz_rdd [xbpz null t [mk_npx_def t]] 'pst [mk_zx_def t]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct tz_ftd tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_tst]
+   [define [gtz-vtf gtz] xbrz_vtf_def]
+  ]]
+
+[define [mktz_ftd t]
+  [tz_ftd [xbpz null t [mk_npx_def t]] 'pre [mk_zx_def t]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[struct tz_fdm tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_main]
+  ]]
+
+[define [mktz_fdm t]
+  [tz_fdm [xbpz null t [mk_npx_def t]] 'pre [mk_zx_def t]]]
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -423,8 +373,8 @@ refactor gbk-sub-key use to account for streams
     [display "tree build timing: "]
     [let* [[t [time [rec-set xbrt_test_root rkl]]]
           [dt [xbrt-del t re]]]
-      [let [[res [stream->list [stream-map car [stream<-xbrz [mktz_fdv t]] ]]]
-            [dres [stream->list [stream-map car [stream<-xbrz [mktz_fdv dt]] ]]]]
+      [let [[res [stream->list [stream-map cdr [stream<-xbrz [mktz_fdpv t]] ]]]
+            [dres [stream->list [stream-map cdr [stream<-xbrz [mktz_fdpv dt]] ]]]]
         [displayln [take res 10]]
         [displayln [take skl 10]]
       [if [equal? res skl]  [displayln "passed xset test!"]
@@ -438,9 +388,9 @@ refactor gbk-sub-key use to account for streams
       [displayln "fct strm def def:"]   
       [disp-stream [stream-take 20 [stream<-xbrz [mktz_fdd [car mt]]]]]
       [displayln "fct strm def val:"]
-      [disp-stream [stream-take 20 [stream<-xbrz [mktz_fdv [car mt]]]]]
+      [disp-stream [stream-take 20 [stream<-xbrz [mktz_fdpv [car mt]]]]]
       [displayln "fct strm tst tst:"]
-      [disp-stream [stream<-xbrz [mktz_ftt [car mt]]]]
+      [disp-stream [stream<-xbrz [mktz_ftd [car mt]]]]
       [displayln "fct strm rev dd:"]
       [disp-stream [stream-take 20 [stream<-xbrz [mktz_rdd [car mt]]]]]
       [newline]
@@ -519,7 +469,7 @@ refactor gbk-sub-key use to account for streams
   ]]
 
 [define [mktz_enc-xml t]
-  [tz_enc-xml [xbpz null t [mk_npx_def t]] 'pre [mk_zx_f_def t]]]
+  [tz_enc-xml [xbpz null t [mk_npx_def t]] 'pre [mk_zx_def t]]]
 
 [define [cell_mod h tn]
   [lambda [z]
@@ -528,7 +478,7 @@ refactor gbk-sub-key use to account for streams
       [list
         [list [cadar [caddr [xbrt-val cn]]] mh z [taglist [tz-head z]] [xbpz-back [tz-head z]]]
         tn
-        [+ 1 [zx_f_def-leaf_count [tz-tx z]]]
+        [+ 1 [zx_def-leaf_count [tz-tx z]]]
         [x_node_def-node_leaf_count [gnx_def-node_x [xbrt-gnx cn]]]
         [+ 1 [npx_def-val_depth [xbpz-bpx [tz-head z]]]]
         [if [equal? 1 mh] [+ mh [- h [+ 1 [npx_def-val_depth [xbpz-bpx [tz-head z]]]] ]] 1]
