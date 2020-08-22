@@ -328,6 +328,13 @@ refactor gbk-sub-key use to account for streams
   [tz_ftd [xbpz null t [mk_npx_def t]] 'pre [mk_zx_def t]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [xbrz_vtf_enc-xml z]
+  [if [and [equal? [tz-state z] 'pre] [not [null? [xbrt-val [xbpz-node [tz-head z]]]]]]
+    z
+    [void]]]
+
+
 [struct tz_fdm tz [] #:transparent
   #:methods gen:gtz
   [[define [gtz-iter gtz] xbrz-next]
@@ -340,6 +347,17 @@ refactor gbk-sub-key use to account for streams
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[struct tz_enc-xml tz [] #:transparent
+  #:methods gen:gtz
+  [[define [gtz-iter gtz] xbrz-next]
+   [define [gtz-cdp gtz] xbrz_tdp_def]
+   [define [gtz-vtf gtz] xbrz_vtf_enc-xml]
+  ]]
+
+[define [mktz_enc-xml t]
+  [tz_enc-xml [xbpz null t [mk_npx_def t]] 'pre [mk_zx_def t]]]
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;[define [xbrz-first t cf]
 ;  [tz [xbpz null t [npx_def 0]] 'pre [zx_def 1]]]
@@ -400,104 +418,6 @@ refactor gbk-sub-key use to account for streams
       ]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-[define [xbrt-enc-xml x]
-  [xbrt-enc-xml-help-node xbrt_test_root "" x]]
-
-[define [xbrt-enc-xml-help-node t kp n]
-  [if [string? n]
-    [xbrt-set t kp [list n]]
-    [let [[nl [[sxpath "/child::node()" [list]] n]]]
-      [let [[kpl [if [equal? 1 [length nl]] [list "0"] [tns [length nl]]]]
-            [nt [xbrt-set t kp [list [car n] [[sxpath "/attribute::*" [list]] n]]]]]
-        [xbrt-enc-xml-help-list nt kp nl kpl]]]
-  ]]
-[define [xbrt-enc-xml-help-list t kp nl kl]
-  [if [null? nl] t
-    [let [[nt [xbrt-enc-xml-help-node t [cat kp [car kl]] [car nl]]]]
-      [xbrt-enc-xml-help-list nt kp [cdr nl] [cdr kl]]]]]
-      
-
-[define [tns l] [for/list [[i [in-range 0 l]]] [pad i [integer-length [sub1 l]] 2]]]
-
-[define xt [cadr [ssax:xml->sxml [open-input-string
-[cat "<cell tag=\"a0\">"
-       "<cell tag=\"s0\">"
-         "<cell tag=\"x1\"></cell>"
-         "<cell tag=\"x2\"></cell>"
-         "<cell tag=\"x3\"></cell>"
-       "</cell>"
-       "<cell tag=\"s1\">"
-         "<cell tag=\"t1\"></cell>"
-       "</cell>"
-       "<cell tag=\"s2\">"
-         "<cell tag=\"y1\"></cell>"
-         "<cell tag=\"y2\">"
-           "<cell tag=\"z1\"></cell>"
-           "<cell tag=\"z2\"></cell>"
-         "</cell>"
-         "<cell tag=\"y3\"></cell>"
-       "</cell>"
-     "</cell>"]] [list]]]]
-
-[define yt [cadr [ssax:xml->sxml [open-input-string
-[cat "<cell tag=\"a0\">"
-       "<cell tag=\"s0\">"
-       "</cell>"
-       "<cell tag=\"s1\">"
-         "<cell tag=\"t1\"></cell>"
-       "</cell>"
-       "<cell tag=\"s2\">"
-         "<cell tag=\"y1\"></cell>"
-         "<cell tag=\"y2\">"
-         "</cell>"
-         "<cell tag=\"y3\"></cell>"
-       "</cell>"
-     "</cell>"]] [list]]]]
-
-[define [xbrz_vtf_enc-xml z]
-  [if [and [equal? [tz-state z] 'pre] [not [null? [xbrt-val [xbpz-node [tz-head z]]]]]]
-    z
-    [void]]]
-
-[struct tz_enc-xml tz [] #:transparent
-  #:methods gen:gtz
-  [[define [gtz-iter gtz] xbrz-next]
-   [define [gtz-cdp gtz] xbrz_tdp_def]
-   [define [gtz-vtf gtz] xbrz_vtf_enc-xml]
-  ]]
-
-[define [mktz_enc-xml t]
-  [tz_enc-xml [xbpz null t [mk_npx_def t]] 'pre [mk_zx_def t]]]
-
-[define [cell_mod h tn]
-  [lambda [z]
-    [let* [[cn [xbpz-node [tz-head z]]]
-           [mh [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx cn]]]]]
-      [list
-        [list [cadar [caddr [xbrt-val cn]]] mh z [taglist [tz-head z]] [xbpz-back [tz-head z]]]
-        tn
-        [+ 1 [zx_def-leaf_count [tz-tx z]]]
-        [x_node_def-node_leaf_count [gnx_def-node_x [xbrt-gnx cn]]]
-        [+ 1 [npx_def-val_depth [xbpz-bpx [tz-head z]]]]
-        [if [equal? 1 mh] [+ mh [- h [+ 1 [npx_def-val_depth [xbpz-bpx [tz-head z]]]] ]] 1]
-        ]
-      ]]]
-
-[define [mk-header_enc-xml t table_id]
-  [let* [;[t [xbrt-enc-xml x]]
-         [h [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx t]]]]]
-    [stream-map [cell_mod h table_id]
-    [stream<-xbrz [mktz_enc-xml t]]]]]
-
-[define [disp-cell x][cons [caar x][cdr x]]]
-[define [enc-xml_get-tag x]  [xbrt-val x]]
-[define [taglist w]
-  [if [null? [xbpz-back w]] [list [enc-xml_get-tag [xbpz-node w]]]
-    [cons [enc-xml_get-tag [xbpz-node w]] [taglist [xbpz-back w]]]]]
-;[disp-stream [stream-map disp-cell [mk-header_enc-xml xt "tf"]]]
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -90,38 +90,3 @@
       ]
   ]]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[define nlist-testlist [list "a" [list "b" "c1" "c2"] "d"]]
-
-[define [nstream<-nlist l]
-  [stream<-list
-  [map [lambda [x]
-         [if [list? x]
-           [stream<-list
-             [map [lambda [e][if [list? e][stream<-list e] e]] x]]
-           x]]
-  l]]]
-
-[define [nlist<-nstream l]
-  [list<-stream
-  [stream-map
-    [lambda [x]
-      [if [stream? x]
-        [list<-stream
-          [stream-map [lambda [e][if [stream? e] [list<-stream e] e]] x]]
-        x]]
-  l]]]
-
-[define [mk-cell t b]
-  [cons 'cell [cons [list '@ [list 'tag t]] b]]]
-
-[define [xml<-nlist l]
-  [if [null? l] [list]
-    [mk-cell
-      [car l]
-      [map [lambda [e]
-             [if [list? e]
-               [xml<-nlist e]
-               [mk-cell e [list]]]] 
-      [cdr l]]]]]
-    
