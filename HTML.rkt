@@ -83,14 +83,24 @@
 "}"
 ]]
      
+
 [define [mk-table-div-id-css l] [stream
-  [cat "#cell-" [cadr [list-ref l 0]]  "-" [list-ref l 3] "-" [list-ref l 1] " {"]
-  [cat "  grid-area: " [list-ref l 3] " / " [list-ref l 1] " / span " [list-ref l 4] " / span " [list-ref l 2] ";"]
+  [cat "#cell-" [cadr [car l]]  "-"
+                [number->string [car [list-ref l 2]]] "-"
+                [number->string [car [list-ref l 1]]] " {"]
+  [cat "  grid-area: " [number->string [car [list-ref l 2]]] " / "
+                       [number->string [car [list-ref l 1]]] " / span "
+                       [number->string [cadr [list-ref l 2]]] " / span "
+                       [number->string [cadr [list-ref l 1]]] ";"]
   [cat "}"]]]
 
 [define [mk-table-div-element l]
-  [html:div [list [cons 'id [cat "cell-" [cadr [list-ref l 0]]  "-" [list-ref l 3] "-" [list-ref l 1]]]]
-            [list [car [list-ref l 0]]]]]
+  [html:div [list [cons 'id [cat "cell-"
+                                 [cadr [car l]]  "-"
+                                 [number->string [car [list-ref l 2]]] "-"
+                                 [number->string [car [list-ref l 1]]]]]]
+            [list [caaar l]]]]
+
 
 [define [mk-table-css dss]
   [stream-concat

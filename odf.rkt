@@ -2,41 +2,78 @@
 [require racket/require
   [path-up "beryllium/main.rkt"]]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-[define [text-a url disp-text]
-  [list 'text:a
+[define [mk-ods-table style content]
+  [cons 'table:table
+  [cons [list '@ [list 'table:style-name "ta1"]
+                 [list 'table:name "Sheet1"]]
+  content]]]
+   
+[define [mk-ods-col style num-cols]
+  [list 'table:table-column
     [list '@
-      [list 'xlink:href "http://www.google.com/"]
-      [list 'xlink:type "simple"]]
-    disp-text]]
+      [list 'table:style-name style]
+      [list 'table:number-columns-repeated [number->string num-cols]]
+      [list 'table:default-cell-style-name "Default"]]]]
 
-[define [text-p body]
-  [cons 'text:p body]]
+[define [mk-ods-row style rows]
+  [cons 'table:table-row
+  [cons [list '@ [list 'table:style-name style]]
+  rows]]]
 
-[define [table-cell body]
-  [list 'table:table-cell
-    [list '@
-     ;[list 'table:style-name "ce2"]
-      [list 'office:value-type "string"]
-      [list 'calcext:value-type "string"]]
-    body]]
+[define [mk-ods-cell style type attr-list col-span row-span body]          
+  [list 'table:table-cell 
+    [append
+      [list '@ 
+        [list 'table:style-name style] 
+        [list 'office:value-type type]] 
+      [if [equal? type "string"] [list] [list [list 'office:value body]]]
+      attr-list
+      [list
+        [list 'calcext:value-type type] 
+        [list 'table:number-columns-spanned [number->string col-span]] 
+        [list 'table:number-rows-spanned [number->string row-span]]]]
+     body]]
+      
+[define [mk-ods-text content-list]
+  [cons 'text:p [cons [cons '@ [list]] content-list]]]
 
-[define [text-span sty body]
-  [list 'text:span
-    [list '@
-      [list 'text:style-name sty]]
-    body]]
+[define [mk-ods-link url content]
+  [cons 'text:a
+  [cons [list '@ [list 'xlink:href url]
+                 [list 'xlink:type "simple"]]
+  content]]]
 
+[define [mk-text-span style content]
+  [cons 'text:span
+  [cons [list '@ [list 'text:style-name style]]
+  content]]]
 
+[define test3
+  [mk-ods-table "ta1" [list
+    [mk-ods-col "co1" 3]
+    [mk-ods-row "ro1" [list
+      [mk-ods-cell "ce3" "string" [list] 1 2
+        [mk-ods-text [list "abc"]]]
+      [mk-ods-cell "ce1" "string" [list] 1 1
+        [mk-ods-text [list "abc"]]]
+      [mk-ods-cell "ce1" "string" [list] 1 1
+        [mk-ods-text [list [mk-ods-link "http://www.google.com/" "abc2"]]]]]]
+    [mk-ods-row "ro1" [list
+      [list 'table:covered-table-cell]
+      [mk-ods-cell "ce1" "string" [list] 1 1
+        [mk-ods-text [list "abc1"]]]
+      [mk-ods-cell "ce1" "string" [list] 1 1
+        [mk-ods-text [list "abc2"]]]]]]]]
 
+[define [run-test] [save-as-ods "mfo12.ods" test3 [ods-styles]]]
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [save-as-ods filename croot sroot]
  [let [[tmpdir [stream-car [stream<-cmd "mktemp -d ods.XXXXXXXXXXXXXXX"]]]
@@ -53,7 +90,7 @@
   [system [cat "zip -u " filename " styles.xml"]]
   [file<-string "content.xml" [xml-mv-ns-to-root odf-nsl
                                   [sxml-fix-prfx odf-nsl
-                                  [srl:sxml->xml
+                                  [srl:sxml->xml-noindent
                                   [ods-templ croot]]]]]
   [system [cat "zip -u " filename " content.xml"]]
   [system [cat "mv " filename " ../"]]
@@ -229,7 +266,7 @@
      [list 'style:family "table-row"]]
     [list 'style:table-row-properties
      [list '@
-      [list 'style:use-optimal-row-height "true"]
+      ;[list 'style:use-optimal-row-height "true"]
       [list 'style:row-height "12.81pt"]
       [list 'fo:break-before "auto"]]]]
 
