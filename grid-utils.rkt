@@ -39,7 +39,7 @@
 [define [mk-empty x y]
   [stream<-list
   [for*/list [[i [in-range 0 x]][j [in-range 0 y]]]
-    [list [list [list "empty"]] [list [+ 1 i] 1] [list [+ 1 j] 1]]]]]
+    [list [list [list [list] "empty"]] [list [+ 1 i] 1] [list [+ 1 j] 1]]]]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [nstream<-nlist l]
@@ -177,11 +177,12 @@
         [yhb  [stream-map transpose-2d-cells [shift-2d-block xhth 0 iyhb]]]]
   [let [[db   [mk-table-block dbf 
                 [sort-cells 1 [cell-filter-leaves xhb]]
-                [sort-cells 2 [cell-filter-leaves yhb]]]]]
-    ;[disp-stream [mk-empty yhth xhth]]  
+                [sort-cells 2 [cell-filter-leaves yhb]]]]]  
+    [add-covered [list [list] "covered"]
     [stream-map [lambda [x] [cons [list [caar x] table_id] [drop x 1]]]
-    [stream-append xhb yhb db [mk-empty yhth xhth]]]]]]]]]
+    [stream-append xhb yhb db [mk-empty yhth xhth]]]]]]]]]]
 
+[define [table-filter-null s] [stream-filter [lambda [x] [not [null? [caaar x]]]] s]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -209,14 +210,12 @@
                 [xml<-nlist xt-nlist]
                 [xml<-nlist yt-nlist] "tf" test-cf]]]
   [disp-stream tt10] 
-  [file<-html_table "html-table-test10" tt10]
+  [file<-html_table "html-table-test10" [table-filter-null tt10]]
   [disp-stream tt20] 
-  [file<-html_table "html-table-test20" tt20]
+  [file<-html_table "html-table-test20" [table-filter-null tt20]]
   [disp-stream
     [stream-map [lambda [x] [sort-cells 2 x]]
     [stream-group [lambda [a b] [equal? [caadr a] [caadr b]]]
     [sort-cells 1
-    [add-covered "covered"
-    tt10]]]]] 
-
+    tt10]]]]
   ]]
