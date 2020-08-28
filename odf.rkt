@@ -2,7 +2,7 @@
 [require racket/require
   [path-up "beryllium/main.rkt"]]
 
-
+[provide [all-defined-out]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -68,6 +68,13 @@
         [mk-ods-text [list "abc1"]]]
       [mk-ods-cell "ce1" "string" [list] 1 1
         [mk-ods-text [list "abc2"]]]]]]]]
+
+
+[define ods-covered-cell [list 'table:covered-table-cell]]
+[define ods-empty-cell
+  [list 'table:table-cell
+    [list '@ [list 'table:style-name "Default"]
+             [list 'table:number-columns-repeated "1"]]]]
 
 [define [run-test] [save-as-ods "mfo12.ods" test3 [ods-styles]]]
 

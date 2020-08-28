@@ -104,13 +104,14 @@
 [define [mk-line x y]
   [cat "l " [number->string x] " "
             [number->string y] " "]]
-[define [mk-arc r a o x y]
-  [cat "a " [number->string r] " "
-            [number->string r] " "
+[define [mk-arc rx ry a af sf x y]
+  [cat "a " [number->string rx] " "
+            [number->string ry] " "
             [number->string a] " "
-            "0" " "
-            [number->string o] " "
-            [number->string x] "," [number->string y] " "]]
+            [number->string af] " "
+            [number->string sf] " "
+            [number->string x] ", "
+            [number->string y] " "]]
 
 [define [invc n d]
   [- 255 [round [* [/ n d] 255]]]]
@@ -135,14 +136,15 @@
 
 [define tpv [apply cat [list
   [mk-abs-mv 600 400]
-  [mk-line 100 10]
-  [mk-line 20 200]
+  [mk-line 100 0]
+  [mk-arc 20 20 90 0 1 20 20]
+  [mk-line 0 200]
   ""]
   ]]
 [define st
   [svg:svg 12 6 [list] [list 
   [svg:text 40 45 30 "testingtext"]
-  [svg:path [mk-black 1 1 0.0] [mk-black 2 4 1.0] 10 tpv] 
+  [svg:path [mk-black 1 1 0.0] [mk-black 2 4 1.0] 2 tpv] 
   [svg:rect 120 120 90 90 10 [mk-red 2 4] [mk-red 4 4] 10 [list]]
   [svg:rect 220 120 90 90 10 [mk-yellow 2 4] [mk-yellow 4 4] 10 [list]]
   [svg:rect 320 120 90 90 10 [mk-green 2 4] [mk-green 4 4] 10 [list]]
@@ -164,5 +166,45 @@
 
 [define [svg-test]
   [file<-string "svg-test-01.svg" [xml-string<-sxml st] 'replace]]
-                             
+        
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define [mk-gnode n bh bw bos]
+  [svg:rect [* n [+ bh bos]] [* n [+ bh bos]] bw [+ bh] 1
+            [mk-black 0 1] [mk-black 1 1] 1 [list]]]
 
+[define [mk-gpath-val n1 n2 bh bw bos]
+  [if [< n2 n1]
+    [apply cat [list
+     [mk-abs-mv [+ [* n2 [+ bh bos]] bw] [+ [* n2 [+ bh bos]] [/ bh 2]]]
+     [mk-line [* [sub1 [- n1 n2]] [+ bh bos]] 0]
+     [mk-arc 20 20 90 0 1 20 20]
+     [mk-line 0 [* [sub1 [- n1 n2]] [+ bh bos]]]
+     ""]]
+    [apply cat [list
+     [mk-abs-mv [+ [* n2 [+ bh bos]]] [+ [* n2 [+ bh bos]] [/ bh 2]]]
+     [mk-line [* [add1 [- n1 n2]] [+ bh bos]] 0]
+     [mk-arc 20 20 90 0 1 -20 -20]
+     [mk-line 0 [* [add1 [- n1 n2]] [+ bh bos]]]
+     ""]]
+  ]]
+
+[define [mk-gpath n1 n2 bh bw bos]
+  [svg:path [mk-black 1 1 0.0] [mk-black 2 4 1.0] 4 [mk-gpath-val n1 n2 bh bw bos]]]
+  
+[define [test-gsvg nc]
+  [let [[nl [filter [lambda [z] [not [or [not [equal? 1 [random 8]]]
+                                         [equal? [car z] [cadr z]]]]]
+            [for*/list [[i [in-range nc]][j [in-range nc]]] [list i j]]]]
+        [hbh 15]
+        [bos 5]]
+    [displayln nl]
+     [svg:svg 12 6 [list]
+       [append
+        [map [lambda [z] [mk-gnode [+ 1 z] [* 2 hbh] 70 5]] [for/list [[i [in-range nc]]] i]]
+        [map [lambda [z] [mk-gpath [+ 1 [car z]][+ 1 [cadr z]] 30 70 5]] nl]
+
+        ]]]]
+
+[define [svg-test-graph [nc 10]]
+  [file<-string "svg-test-02.svg" [xml-string<-sxml [test-gsvg nc]] 'replace]]
+                             

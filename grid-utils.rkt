@@ -8,7 +8,7 @@
 [require "X3D.rkt"]
 [require "HTML.rkt"]
 [require "align.rkt"]
-
+[require "odf.rkt"]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define nlist-testlist [list "a" [list "b" "c1" "c2"] "d"]]
 [define xt-nlist [list "ah0" [list "s0" [list "x1"][list "x2"][list "x3"]]
@@ -213,9 +213,40 @@
   [file<-html_table "html-table-test10" [table-filter-null tt10]]
   [disp-stream tt20] 
   [file<-html_table "html-table-test20" [table-filter-null tt20]]
-  [disp-stream
-    [stream-map [lambda [x] [sort-cells 2 x]]
-    [stream-group [lambda [a b] [equal? [caadr a] [caadr b]]]
-    [sort-cells 1
-    tt10]]]]
+  [let [[ntt10 [stream-map [lambda [x] [sort-cells 2 x]]
+               [stream-group [lambda [a b] [equal? [caadr a] [caadr b]]]
+               [sort-cells 1
+               tt20]]]]]
+    [disp-stream
+    [stream-map [lambda [z] [stream-map [lambda [x] [list x [ods-conv x]]] z]]
+    ntt10]]
+    [save-as-ods "mfo40.ods" [ods-tab-conv ntt10] [ods-styles]]
+    [writeln [ods-tab-conv ntt10]]
+    ]
   ]]
+
+[define [ods-tab-conv st]
+  [mk-ods-table "ta1" [cons
+    [mk-ods-col "co1" 6]
+    [list<-stream
+    [stream-map ods-row-conv st]]]]]
+
+[define [ods-row-conv s]
+  [mk-ods-row "ro1" [list<-stream 
+    [stream-map ods-conv s]]]]
+
+[define [ods-conv e]
+  [cond [[equal? [list] [caaar e]]
+           [cond [[equal? "covered" [cadr [caar e]]]
+                     ods-covered-cell]
+                 [[equal? "empty" [cadr [caar e]]]
+                     ods-empty-cell]]]
+        [[regexp-match #rx"h.*v.*." [caaar e]]
+           [mk-ods-cell "ce1" "string" [list] 1 1
+             [mk-ods-text [list [caaar e]]]]]
+        [else
+           [mk-ods-cell "ce3" "string" [list] [cadr [caddr e]] [cadr [cadr e]] 
+             [mk-ods-text [list [caaar e]]]]]]]
+
+
+  
