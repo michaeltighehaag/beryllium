@@ -42,6 +42,7 @@
     [list 'x [number->string x]]
     [list 'y [number->string y]]
     [list 'font-size [number->string s]]
+    [list 'font-family "Inconsolata"]
     ]] [list t]]]]
 
 [define [svg:rect x y w h r fc sc sw el] 
@@ -131,7 +132,6 @@
   [rgba [invc n d] [invc n d] [invc n d] o]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 [define tpv [apply cat [list
@@ -168,9 +168,14 @@
   [file<-string "svg-test-01.svg" [xml-string<-sxml st] 'replace]]
         
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-[define [mk-gnode n bh bw bos]
-  [svg:rect [* n [+ bh bos]] [* n [+ bh bos]] bw [+ bh] 1
-            [mk-black 0 1] [mk-black 1 1] 1 [list]]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define [mk-gnode label n bh bw bos]
+  [list
+    [svg:rect [* n [+ bh bos]] [* n [+ bh bos]] bw [+ bh] 1
+            [mk-black 0 1] [mk-black 1 1] 1 [list]]
+    [svg:text [+ [* n [+ bh bos]] bos] [+ [* n [+ bh bos]] [* bh 0.75]] 25 [cat label]] 
+  ]]
 
 [define [mk-gpath-val n1 n2 bh bw bos]
   [if [< n2 n1]
@@ -190,21 +195,28 @@
 
 [define [mk-gpath n1 n2 bh bw bos]
   [svg:path [mk-black 1 1 0.0] [mk-black 2 4 1.0] 4 [mk-gpath-val n1 n2 bh bw bos]]]
-  
-[define [test-gsvg nc]
-  [let [[nl [filter [lambda [z] [not [or [not [equal? 1 [random 8]]]
-                                         [equal? [car z] [cadr z]]]]]
-            [for*/list [[i [in-range nc]][j [in-range nc]]] [list i j]]]]
-        [hbh 15]
-        [bos 5]]
-    [displayln nl]
+
+[define [mk-svg-graph nodes edges]
+  [let [[hbh 15] [bos 5]]
      [svg:svg 12 6 [list]
        [append
-        [map [lambda [z] [mk-gnode [+ 1 z] [* 2 hbh] 70 5]] [for/list [[i [in-range nc]]] i]]
-        [map [lambda [z] [mk-gpath [+ 1 [car z]][+ 1 [cadr z]] 30 70 5]] nl]
-
+         [append* [map [lambda [z] [mk-gnode [car z] [+ 1 [cadr z]] [* 2 hbh] 70 5]]
+                  [list-zip nodes [build-list [length nodes] values]]]]                     
+        [map [lambda [z] [mk-gpath [+ 1 [car z]][+ 1 [cadr z]] 30 70 5]] edges]
         ]]]]
 
-[define [svg-test-graph [nc 10]]
-  [file<-string "svg-test-02.svg" [xml-string<-sxml [test-gsvg nc]] 'replace]]
+[define [mk-svg name g]
+  [file<-string name [xml-string<-sxml g] 'replace]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define [test-edges n] [filter [lambda [z] [not [or [not [equal? 1 [random 8]]]
+                                         [equal? [car z] [cadr z]]]]]
+            [for*/list [[i [in-range n]][j [in-range n]]] [list i j]]]]
+
+[define [test-nodes n] [map number->string [build-list n values]]]
+
+[define [svg-graph-test] [mk-svg "svg-test-02.svg" [mk-svg-graph [test-nodes 20] [test-edges 20]]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                              

@@ -18,6 +18,9 @@ A variety of useful functions.
 [require json-parsing]
 [provide [all-from-out json-parsing]]
 
+
+[define list-zip [lambda lists [apply map list lists]]]
+
 ;*******************************************************************************************
 ;xml 
 
