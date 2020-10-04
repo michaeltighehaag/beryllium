@@ -217,3 +217,13 @@
             [apply cat [map str<-vec [map list->vector [cons [list-ref cl 2] cl]]]]]]]]
 
 [define x3d-test-list [mk-x3d-test "0.0 0.333 0.666 1.0" test-edge-list test-shape-list coord-vec]]
+
+[define x3dom-css 
+"./xlib/x3dom/x3dom-1.7.2/x3dom.css"
+]
+[define x3dom-js 
+"./xlib/x3dom/x3dom-1.7.2/x3dom-full.js"
+]
+[define jq-js 
+
+"./xlib/jquery/jquery-2.js"]

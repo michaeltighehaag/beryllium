@@ -18,16 +18,26 @@ A variety of useful functions.
 [require json-parsing]
 [provide [all-from-out json-parsing]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+[define cat string-append]
+[define string<-number number->string]
 [define list-zip [lambda lists [apply map list lists]]]
-
-;*******************************************************************************************
+[define [list-get n l] [list-ref l n]]
+[define [list-sort pred l] [sort l pred]]
+[define [list-take n l] [take l n]]
+[define [list-drop n l] [drop l n]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;xml 
 
 [define [file<-string fn str [ex 'replace]]
   [call-with-output-file fn [lambda [out] [display str out]] #:exists ex]]
+
 [define [string<-file fn]
   [port->string [open-input-file fn]]]
+
 [define [sxml<-filename fn [nsl null]] [call-with-input-file fn [lambda [in] [ssax:xml->sxml in nsl]]]]
 [define [sxml<-string str [nsl null]] [ssax:xml->sxml [open-input-string str] nsl]]
 
@@ -38,33 +48,8 @@ A variety of useful functions.
   [srl:sxml->xml [list '*TOP* [list '*PI* 'xml "version=\"1.0\" encoding=\"UTF-8\""]
                               [list '@ [cons '*NAMESPACES* nsl]]
                               body]]]
-#|
-[define [xml-elem->file x]
-  [let* [[xs [bytes->string/utf-8 [car x]]]
-         [id [cadr [regexp-match #rx"<recordid>(.*?)</recordid>" xs]]]
-         [o [open-output-file [cat "dest/" id] #:exists 'replace]]]
-    [displayln "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" o]
-    [displayln xs o]
-    [close-output-port o]
-    ]]
-[define node->file [lambda [x]
-  [let* [[xs [bytes->string/utf-8 [car x]]]
-         [id [cadr [regexp-match #rx"<recordid>(.*?)</recordid>" xs]]]
-         [o [open-output-file [cat "dest/" id] #:exists 'replace]]]
-    [displayln "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" o]
-    [displayln xs o]
-    [close-output-port o]
-    ]]]
 
-[define node-str->file [lambda [x y]
-  [let* [[o [open-output-file y #:exists 'replace]]]
-    [displayln "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" o]
-    [displayln x o]
-    [close-output-port o]
-    ]]]
-[define node->str [lambda [x] [let* [[xs [bytes->string/utf-8 [cdr x]]]] xs]]]
-|#
-;*****************************************************************************************
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define [jsx-str s] [list 'string s]]
 [define [jsx-mem k v] [list 'member [list '@ [list 'name k]] v]]
 [define [jsx-obj l] [cons 'object l]]
@@ -89,13 +74,9 @@ A variety of useful functions.
     [else [display "unrec error"]]]]
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;*******************************************************************************************
-[define cat string-append]
-;*******************************************************************************************
-
-
-;;;
 [define [nth-tsv n] [lambda [x] [list-ref [regexp-match* #rx"[^\t\n]*" x] [* 2 n]]]]
 
 [define [n<-f f] [string->number f]]
@@ -110,9 +91,7 @@ A variety of useful functions.
 
 [define rx-swaps regexp-replaces]
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;*******************************************************************************************
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;making padded numeric strings
 [define [pad n d [r 10]]
   [let [[s [number->string n r]]]
@@ -127,12 +106,11 @@ A variety of useful functions.
   [let [[count start]] 
     [lambda [] [set! count [+ count 1]] [pad count digits radix] ]]]
     
-    
-[define [str<-vec x] [apply cat [vector->list [vector-map [lambda [y] [cat " " [number->string y]]] x]]]]   
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;*******************************************************************************************
+[define [str<-vec x]
+  [apply cat [vector->list [vector-map [lambda [y] [cat " " [number->string y]]] x]]]]   
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;[enum-trees [list "a" "b" "c"]]
 [define [enum-trees labels]
   [if [equal? [length labels] 1]
@@ -170,8 +148,8 @@ A variety of useful functions.
                [append [take x i] [list [car l]] [drop x i]]]]
            [all-perm [cdr l]]]]]]
 
-;*******************************************************************************************
-;********************************************************************************************
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define test-str "\n[define x 23]\n[define [f1 d f] [+ d f]]\n[define y [f1 x 3]]\n"]
 
 [define swap-list [list

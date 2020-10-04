@@ -9,6 +9,8 @@
 [require "HTML.rkt"]
 [require "align.rkt"]
 [require "odf.rkt"]
+
+[provide [all-defined-out]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [define nlist-testlist [list "a" [list "b" "c1" "c2"] "d"]]
 [define xt-nlist [list "ah0" [list "s0" [list "x1"][list "x2"][list "x3"]]

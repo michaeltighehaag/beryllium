@@ -9,6 +9,9 @@
 [require "X3D.rkt"]
 [require "HTML.rkt"]
 [require "align.rkt"]
+;[require "grid-utils.rkt"]
+;[require "svg.rkt"]
+;[require "odf.rkt"]
 
 [provide [all-from-out "common.rkt"]]
 [provide [all-from-out "stream.rkt"]]
@@ -19,6 +22,9 @@
 [provide [all-from-out "X3D.rkt"]]
 [provide [all-from-out "HTML.rkt"]]
 [provide [all-from-out "align.rkt"]]
+;[provide [all-from-out"grid-utils.rkt"]]
+;[provide [all-from-out"svg.rkt"]]
+;[provide [all-from-out"odf.rkt"]]
 
 [provide spider]
 [provide spider-group]
