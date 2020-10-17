@@ -61,7 +61,7 @@
       [mk-ods-cell "ce1" "string" [list] 1 1
         [mk-ods-text [list "abc"]]]
       [mk-ods-cell "ce1" "string" [list] 1 1
-        [mk-ods-text [list [mk-ods-link "http://www.google.com/" "abc2"]]]]]]
+        [mk-ods-text [list [mk-ods-link "#Sheet2.F8" [list "abc2"]]]]]]]
     [mk-ods-row "ro1" [list
       [list 'table:covered-table-cell]
       [mk-ods-cell "ce1" "string" [list] 1 1
@@ -71,9 +71,9 @@
 
 
 [define ods-covered-cell [list 'table:covered-table-cell]]
-[define ods-empty-cell
+[define [ods-empty-cell [style "Default"]]
   [list 'table:table-cell
-    [list '@ [list 'table:style-name "Default"]
+    [list '@ [list 'table:style-name style]
              [list 'table:number-columns-repeated "1"]]]]
 
 [define [run-test] [save-as-ods "mfo12.ods" test3 [ods-styles]]]
@@ -291,29 +291,6 @@
      [list 'style:parent-style-name "Default"]
      [list 'style:name "ce1"]
      [list 'style:family "table-cell"]]
-    [list 'style:text-properties
-     [list '@ 
-      [list 'style:font-name "Inconsolata"] 
-      [list 'fo:font-weight "normal"]]]]
-   [list 'style:style
-    [list '@
-     [list 'style:parent-style-name "Default"]
-     [list 'style:name "ce2"]
-     [list 'style:family "table-cell"]]
-    [list 'style:table-cell-properties 
-     [list '@ 
-      [list 'fo:background-color "#cccccc"]
-      [list 'fo:wrap-option "wrap"]]]
-    [list 'style:text-properties
-     [list '@ 
-      [list 'style:font-name "Inconsolata"] 
-      [list 'fo:font-weight "normal"]
-      ]]]
-   [list 'style:style
-    [list '@
-     [list 'style:parent-style-name "Default"]
-     [list 'style:name "ce3"]
-     [list 'style:family "table-cell"]]
     [list 'style:table-cell-properties 
      [list '@ 
       [list 'fo:background-color "#cccccc"]
@@ -328,8 +305,53 @@
      [list '@
       [list 'fo:text-align "center"]
       [list 'fo:margin-left "0pt"]]]] 
+   [list 'style:style
+    [list '@
+     [list 'style:parent-style-name "Default"]
+     [list 'style:name "ce2"]
+     [list 'style:family "table-cell"]]
+    [list 'style:table-cell-properties 
+     [list '@ 
+      [list 'fo:background-color "#e0e0ff"]
+      [list 'fo:border "0.74pt solid #000000"]
+      [list 'fo:wrap-option "wrap"]]]
+    [list 'style:text-properties
+     [list '@ 
+      [list 'style:font-name "Inconsolata"] 
+      [list 'fo:font-weight "normal"]
+      ]]]
+   [list 'style:style
+    [list '@
+     [list 'style:parent-style-name "Default"]
+     [list 'style:name "ce2rb"]
+     [list 'style:family "table-cell"]]
+    [list 'style:table-cell-properties 
+     [list '@ 
+      [list 'fo:background-color "#e0e0ff"]
+      [list 'fo:border "0.74pt solid #000000"]
+      [list 'fo:border-right "6.0pt solid #000000"]
+      [list 'fo:wrap-option "wrap"]]]
+    [list 'style:text-properties
+     [list '@ 
+      [list 'style:font-name "Inconsolata"] 
+      [list 'fo:font-weight "normal"]
+      ]]]
 
-   
+   [list 'style:style
+    [list '@
+     [list 'style:parent-style-name "Default"]
+     [list 'style:name "ce3"]
+     [list 'style:family "table-cell"]]
+    [list 'style:table-cell-properties 
+     [list '@ 
+      [list 'fo:background-color "#ff8080"]
+      [list 'fo:border "0.74pt solid #000000"]
+      [list 'fo:wrap-option "wrap"]]]
+    [list 'style:text-properties
+     [list '@ 
+      [list 'style:font-name "Inconsolata"] 
+      [list 'fo:font-weight "normal"]
+      ]]]
    [list 'style:style
     [list '@
      [list 'style:parent-style-name "Default"]
@@ -337,11 +359,17 @@
      [list 'style:family "table-cell"]]
     [list 'style:table-cell-properties 
      [list '@ 
-      [list 'fo:background-color "#cccccc"]]]
+      [list 'fo:background-color "#d0d0ff"]
+      [list 'fo:border "0.74pt solid #000000"]
+      [list 'fo:wrap-option "wrap"]]]
     [list 'style:text-properties
      [list '@ 
       [list 'style:font-name "Inconsolata"] 
-      [list 'fo:font-weight "normal"]]]]
+      [list 'fo:font-weight "normal"]
+      ]]]
+
+   
+
 
 ;<style:table-cell-properties style:text-align-source="fix" style:repeat-content="false" fo:border="0.74pt solid #000000" style:vertical-align="middle" />
 ;<style:paragraph-properties fo:text-align="center" fo:margin-left="0pt" />

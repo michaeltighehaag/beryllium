@@ -100,12 +100,12 @@
     [for/list [[i [in-range 0 l]]]
       [pad i [integer-length [sub1 l]] 2]]]]
 
-[define [cell_mod h]
+[define [cell_mod h tid]
   [lambda [z]
     [let* [[cn [xbpz-node [tz-head z]]]
            [mh [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx cn]]]]]
       [list
-        [list [taglist [tz-head z]] mh ]
+        [list [reverse [taglist [tz-head z]]] tid ]
         ;tn
         [list [+ 1 [zx_def-leaf_count [tz-tx z]]]
               [x_node_def-node_leaf_count [gnx_def-node_x [xbrt-gnx cn]]]]
@@ -114,9 +114,9 @@
         ]
       ]]]
 
-[define [mk-header_enc-xml t]
+[define [mk-header_enc-xml t tid]
   [let* [[h [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx t]]]]]
-    [stream-map [cell_mod h]
+    [stream-map [cell_mod h tid]
     [stream<-xbrz [mktz_enc-xml t]]]]]
 
 [define [taglist w]
@@ -184,6 +184,28 @@
     [stream-map [lambda [x] [cons [list [caar x] table_id] [drop x 1]]]
     [stream-append xhb yhb db [mk-empty yhth xhth]]]]]]]]]]
 
+[define [cell-filter-x v] 
+  [lambda [x] [equal? [add1 v] [apply + [cadr x]]]]]
+[define [cell-filter-y v]
+  [lambda [x] [equal? [add1 v] [apply + [caddr x]]]]]
+
+
+[define [mk-gen-table-stream xht yht tid dbf xf yf]
+  [let [[xpht [xbrt-enc-xml xht]]
+        [ypht [xbrt-enc-xml yht]]]
+  [let [[xhth [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx xpht]]]]
+        [yhth [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx ypht]]]]]
+  [let [[ixhb [mk-header_enc-xml xpht tid]]
+        [iyhb [mk-header_enc-xml ypht tid]]]
+  [let [[xhb  [shift-2d-block yhth 0 ixhb]]
+        [yhb  [stream-map transpose-2d-cells [shift-2d-block xhth 0 iyhb]]]]
+  [let [[db   [mk-table-block dbf 
+                [sort-cells 1 [stream-filter [cell-filter-y xhth] xhb]]
+                [sort-cells 2 [stream-filter [cell-filter-x yhth] yhb]] ]]]
+    [add-covered [list [list] "covered"]
+    [stream-append [stream-map xf xhb] [stream-map yf yhb] db [mk-empty yhth xhth]]]]]]]]]
+
+
 [define [table-filter-null s] [stream-filter [lambda [x] [not [null? [caaar x]]]] s]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -215,23 +237,21 @@
   [file<-html_table "html-table-test10" [table-filter-null tt10]]
   [disp-stream tt20] 
   [file<-html_table "html-table-test20" [table-filter-null tt20]]
-  [let [[ntt10 [stream-map [lambda [x] [sort-cells 2 x]]
-               [stream-group [lambda [a b] [equal? [caadr a] [caadr b]]]
-               [sort-cells 1
-               tt20]]]]]
-    [disp-stream
-    [stream-map [lambda [z] [stream-map [lambda [x] [list x [ods-conv x]]] z]]
-    ntt10]]
-    [save-as-ods "mfo40.ods" [ods-tab-conv ntt10] [ods-styles]]
-    [writeln [ods-tab-conv ntt10]]
-    ]
+  [save-as-ods "mfo40.ods" [ods-tab-conv tt20] [ods-styles]]
+  [writeln [ods-tab-conv tt20]]
+    
   ]]
 
+[define [col-max x] [+ -1 [caadr x] [cadadr x]]]
 [define [ods-tab-conv st]
-  [mk-ods-table "ta1" [cons
-    [mk-ods-col "co1" 6]
+  [let [[col-count [argmax [lambda [x] x] [list<-stream [stream-map col-max st]]]]]  
+    [mk-ods-table "ta1" [cons
+    [mk-ods-col "co1" col-count]
     [list<-stream
-    [stream-map ods-row-conv st]]]]]
+    [stream-map ods-row-conv
+    [stream-map [lambda [x] [sort-cells 1 x]]
+    [stream-group [lambda [a b] [equal? [caaddr a] [caaddr b]]]
+    [sort-cells 2 st]]]]]]]]]
 
 [define [ods-row-conv s]
   [mk-ods-row "ro1" [list<-stream 
@@ -242,13 +262,13 @@
            [cond [[equal? "covered" [cadr [caar e]]]
                      ods-covered-cell]
                  [[equal? "empty" [cadr [caar e]]]
-                     ods-empty-cell]]]
-        [[regexp-match #rx"h.*v.*." [caaar e]]
-           [mk-ods-cell "ce1" "string" [list] 1 1
-             [mk-ods-text [list [caaar e]]]]]
+                     [ods-empty-cell "ce1"]]]]
+;        [[regexp-match #rx"h.*v.*." [caaar e]]
+;           [mk-ods-cell "ce1" "string" [list] 1 1
+;             [mk-ods-text [list [caaar e]]]]]
         [else
-           [mk-ods-cell "ce3" "string" [list] [cadr [caddr e]] [cadr [cadr e]] 
-             [mk-ods-text [list [caaar e]]]]]]]
+           [mk-ods-cell [cadr [caaar e]] "string" [list] [cadr [cadr e]] [cadr [caddr e]] 
+             [mk-ods-text [list [car [caaar e]]]]]]]]
 
 
   
