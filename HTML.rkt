@@ -99,7 +99,7 @@
                                  [cadr [car l]]  "-"
                                  [number->string [car [list-ref l 2]]] "-"
                                  [number->string [car [list-ref l 1]]]]]]
-            [list [caaar l]]]]
+            [list [caaaar l]]]]
 
 
 [define [mk-table-css dss]

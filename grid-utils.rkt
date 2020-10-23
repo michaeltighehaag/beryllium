@@ -38,10 +38,10 @@
   [stream-map [lambda [x] [mk-covered x v]]
   s]]]]
 
-[define [mk-empty x y]
+[define [mk-empty x y tid]
   [stream<-list
   [for*/list [[i [in-range 0 x]][j [in-range 0 y]]]
-    [list [list [list [list] "empty"]] [list [+ 1 i] 1] [list [+ 1 j] 1]]]]]
+    [list [list [list [list] "empty"] tid] [list [+ 1 i] 1] [list [+ 1 j] 1]]]]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [nstream<-nlist l]
@@ -128,10 +128,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[define [test-cf x y]
-  [list [list [list [cat "h" [caaar x] "v" [caaar y] "?"]]]
+[define [test-cf tid style]
+  [lambda [x y]
+  [list [list [list [list [cat "h" [car [reverse [caar x]]] "v" [car [reverse [caar y]]] "?"] style]] tid]
         [list [caadr x] 1]
-        [list [caaddr y] 1]]]
+        [list [caaddr y] 1]]]]
 
 [define [mk-table-block cellf row-strm col-strm]
   [stream-concat
@@ -165,30 +166,13 @@
 [define [sort-cells d s]
   [stream-sort [lambda [x y] [< [car [list-ref x d]] [car [list-ref y d]]]] s]]
 
-[define [cell-filter-leaves s] 
-  [stream-filter [lambda [x] [equal? 1 [cadar x]]] s]]
-
-[define [mk-table-stream xht yht table_id dbf]
-  [let [[xpht [xbrt-enc-xml xht]]
-        [ypht [xbrt-enc-xml yht]]]
-  [let [[xhth [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx xpht]]]]
-        [yhth [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx ypht]]]]]
-  [let [[ixhb [mk-header_enc-xml xpht]]
-        [iyhb [mk-header_enc-xml ypht]]]
-  [let [[xhb  [shift-2d-block yhth 0 ixhb]]
-        [yhb  [stream-map transpose-2d-cells [shift-2d-block xhth 0 iyhb]]]]
-  [let [[db   [mk-table-block dbf 
-                [sort-cells 1 [cell-filter-leaves xhb]]
-                [sort-cells 2 [cell-filter-leaves yhb]]]]]  
-    [add-covered [list [list] "covered"]
-    [stream-map [lambda [x] [cons [list [caar x] table_id] [drop x 1]]]
-    [stream-append xhb yhb db [mk-empty yhth xhth]]]]]]]]]]
+;[define [cell-filter-leaves s] 
+;  [stream-filter [lambda [x] [equal? 1 [cadar x]]] s]]
 
 [define [cell-filter-x v] 
   [lambda [x] [equal? [add1 v] [apply + [cadr x]]]]]
 [define [cell-filter-y v]
   [lambda [x] [equal? [add1 v] [apply + [caddr x]]]]]
-
 
 [define [mk-gen-table-stream xht yht tid dbf xf yf]
   [let [[xpht [xbrt-enc-xml xht]]
@@ -203,12 +187,10 @@
                 [sort-cells 1 [stream-filter [cell-filter-y xhth] xhb]]
                 [sort-cells 2 [stream-filter [cell-filter-x yhth] yhb]] ]]]
     [add-covered [list [list] "covered"]
-    [stream-append [stream-map xf xhb] [stream-map yf yhb] db [mk-empty yhth xhth]]]]]]]]]
-
+    [stream-append [stream-map xf xhb] [stream-map yf yhb] db [mk-empty yhth xhth tid]]]]]]]]]
 
 [define [table-filter-null s] [stream-filter [lambda [x] [not [null? [caaar x]]]] s]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;[html-table-test]
 [define [file<-html_table fname html_table_stream]                                            
@@ -226,20 +208,22 @@
                      [mk-table-css [stream html_table_stream]]]]
     ]]
 
+[define [test-hf x]
+  [cons [list [cons [list [car [reverse [caar x]]] "ce1"] [caar x]] [cadar x] ] [drop x 1]]]
+
 [define [html-table-test]
-  [let [[tt10 [mk-table-stream
+  [let [[tt10 [mk-gen-table-stream
                 [xml<-nlist nlist-testlist]
-                [xml<-nlist nlist-testlist] "tf" test-cf]]
-        [tt20 [mk-table-stream
+                [xml<-nlist nlist-testlist] "tf" [test-cf "tf" "ce1"] test-hf test-hf]]
+        [tt20 [mk-gen-table-stream
                 [xml<-nlist xt-nlist]
-                [xml<-nlist yt-nlist] "tf" test-cf]]]
+                [xml<-nlist yt-nlist] "tf" [test-cf "tf" "ce1"] test-hf test-hf]]]
   [disp-stream tt10] 
-  [file<-html_table "html-table-test10" [table-filter-null tt10]]
+  [file<-html_table "html-table-test11" [table-filter-null tt10]]
   [disp-stream tt20] 
-  [file<-html_table "html-table-test20" [table-filter-null tt20]]
-  [save-as-ods "mfo40.ods" [ods-tab-conv tt20] [ods-styles]]
-  [writeln [ods-tab-conv tt20]]
-    
+  [file<-html_table "html-table-test21" [table-filter-null tt20]]
+;  [save-as-ods "mfo40.ods" [ods-tab-conv tt20] [ods-styles]]
+;  [writeln [ods-tab-conv tt20]]
   ]]
 
 [define [col-max x] [+ -1 [caadr x] [cadadr x]]]

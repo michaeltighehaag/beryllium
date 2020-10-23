@@ -67,7 +67,10 @@
       [mk-ods-cell "ce1" "string" [list] 1 1
         [mk-ods-text [list "abc1"]]]
       [mk-ods-cell "ce1" "string" [list] 1 1
-        [mk-ods-text [list "abc2"]]]]]]]]
+        [mk-ods-text [list "GC" [list 'text:span [list '@ [list 'text:style-name "T1"]] "ATG"] "CU"]]]]]]]]
+
+
+         
 
 
 [define ods-covered-cell [list 'table:covered-table-cell]]
@@ -76,7 +79,7 @@
     [list '@ [list 'table:style-name style]
              [list 'table:number-columns-repeated "1"]]]]
 
-[define [run-test] [save-as-ods "mfo12.ods" test3 [ods-styles]]]
+[define [run-test td] [save-as-ods "table-test.ods" td [ods-styles]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -382,17 +385,22 @@
      [list 'style:family "text"]]
     [list 'style:text-properties 
      [list '@ 
-      [list 'fo:color "#ffffff"]]]]
+      [list 'fo:color "#ffffff"]
+      ]]]
+
+
+
 
    [list 'style:style
     [list '@ 
-     [list 'style:name "T2"] 
+     [list 'style:name "T3"] 
      [list 'style:family "text"]]
     [list 'style:text-properties
      [list '@
       [list 'style:text-underline-width "bold"]
       [list 'style:text-underline-style "solid"]
       [list 'style:text-underline-color "font-color"]]]]
+
 ]]
 
 [define [ods-body ods-tab]
