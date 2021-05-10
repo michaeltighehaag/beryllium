@@ -103,9 +103,12 @@
                                   [srl:sxml->xml-noindent
                                   [ods-templ croot]]]]]
   [system [cat "zip -u " filename " content.xml"]]
-  [system [cat "mv " filename " ../"]]
+;  [system "pwd"]
+;  [displayln [current-directory]]
+  [system [cat "mv " filename ".zip ../" filename ".ods"]]
   [current-directory curdir]
-  [system [cat "rm -r " tmpdir]]]]
+  [system [cat "rm -r " tmpdir]]
+  ]]
 
 
 [define ods-mimetype "application/vnd.oasis.opendocument.spreadsheet"]

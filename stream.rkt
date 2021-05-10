@@ -65,6 +65,7 @@ including some examples taken from the documentation for srfi/41
     [begin [displayln "-" o] [stream-for-each [lambda [y] [display-stream y o]] x]]
     [display x o]]]
 
+[define [string<-disp-stream x] [with-output-to-string [lambda [] [disp-stream x]]]]
 
 [define-stream [stream-chunk n strm]
   [if [stream-null? strm]
@@ -222,6 +223,23 @@ including some examples taken from the documentation for srfi/41
       [if [equal? #f c]
           [begin [close-input-port p] stream-null]
           [stream-cons c [loop [regexp-match rx p]]]]]]]
+          
+;********************************************************************************************
+
+[define [stream-rx-match rx z]
+  [stream-filter [lambda [x] x]
+  [stream-map [lambda [x] [regexp-match rx x]] z]]]
+
+[define [stream-rx-nonmatch rx z]
+  [stream-filter [lambda [x] x]
+  [stream-map [lambda [x] [let [[r [regexp-match rx x]]]
+                            [if [list? r] #f x]]] z]]]
+
+[define [stream-rx-replace rx rs z]
+  [stream-map [lambda [x] [regexp-replace rx x rs]] z]]
+
+[define [stream-rx-replace* rx rs z]
+  [stream-map [lambda [x] [regexp-replace* rx x rs]] z]]
 
 ;********************************************************************************************
 
@@ -237,22 +255,13 @@ including some examples taken from the documentation for srfi/41
           [stream-cons c
             [loop [read-line in-p]]]]]]]
 
- 
-[define [rep-read-output port prompt]
-    [let [[r [regexp-match [regexp [cat "^" prompt "|^[^\n]*\n"]] port]]]
-     [if [list? r]
-       [let [[res [bytes->string/utf-8 [car r]]]]
-         [if [equal? prompt res] 'prompt
-           [substring res 0 [sub1 [string-length res]]]]]
-       eof]]]
-
 [define [stream<-reps cmd arg-list prompt strm]
   [if [stream-null? strm] stream-null
     [let-values [[[in-p out-p pid err-p stat]
                   [apply values [apply process*/ports #f #f [current-output-port] cmd arg-list]]]]
       [file-stream-buffer-mode out-p 'line]
       [let [[dn [open-output-file "/dev/null" #:exists 'append ]]]
-        [stream-rep strm "> " dn in-p out-p pid err-p stat]
+        [stream-rep strm prompt dn in-p out-p pid err-p stat]
       ]]]]
 
 [define [stream-rep cs prmpt dn ip op pid err-p stat]
@@ -274,6 +283,17 @@ including some examples taken from the documentation for srfi/41
                [cons [rep-read-output ip [cdr z]] ip]]]]
     [disp-stream res dn]
     res]]   
+
+[define [rep-read-output port prompt]
+    [let [[r [regexp-match [regexp [cat "^" prompt "|^[^\n]*\n"]] port]]]
+     [if [list? r]
+       [let [[res [bytes->string/utf-8 [car r]]]]
+         [if [equal? prompt res] 'prompt
+           [substring res 0 [sub1 [string-length res]]]]]
+       eof]]]
+
+
+;********************************************************************************************
 
 [define [stream-argext r f]
   [lambda [s] [stream-argext-help r f [void] s]]]
