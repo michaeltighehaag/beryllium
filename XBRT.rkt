@@ -199,6 +199,30 @@ refactor gbk-sub-key use to account for streams
          [x [gnx_null]]]
     [xbrt_file_rep b null x null null]]]
 
+[struct xbrt_file_append xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-set t k v]
+     [let [[pv [xbrt-get t k]]]
+       [if [null? pv]
+         [let [[op [open-output-file k #:exists 'append]]]
+           [displayln v op]
+           [x_set t [rbk<-string k] op [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_append]]
+         [begin [displayln v pv] t]]]]
+   [define [xbrt-get t k]
+      [inn xbrt-val [x_nget t [rbk<-string k] null]]]
+   [define [xbrt-xget t k]
+      [inn xbrt-gnx [x_nget t [rbk<-string k] null]]]
+   [define [xbrt-nget t k]
+      [x_nget t [rbk<-string k] null]]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_file_append]]
+]]
+
+[define xbrt_file_append_root
+  [let* [[b [rbk<-string ""]]
+         [x [gnx_null]]]
+    [xbrt_file_append b null x null null]]]
+
 ;;;;;;;;;;;;;;;;; for testing;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [struct xbrt_test xbrt [] #:transparent
   #:methods gen:gxbrt
