@@ -30,6 +30,7 @@
 [define [html:table al el] [cons 'table [cons [cons '@ al] el]]]
 [define [html:tr al el] [cons 'tr [cons [cons '@ al] el]]]
 [define [html:td al el] [cons 'td [cons [cons '@ al] el]]]
+[define [html:th al el] [cons 'th [cons [cons '@ al] el]]]
 [define [html:a al el] [cons 'a [cons [cons '@ al] el]]]
 [define [html:br al el] [cons 'br [cons [cons '@ al] el]]]
 
@@ -114,4 +115,25 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [file<-html-stream fname css-stream body-stream]                                            
+  [let* [[out-file-html [open-output-file [cat fname ".html"] #:exists 'replace]]]
+    [write-html
+      [mk-html [list] [list]
+        [list [mk-css-link [cat "./" fname ".css"]]]
+        [list]
+        [list<-stream body-stream]]
+      out-file-html]
+    [close-output-port out-file-html]
+    [file<-stream [cat fname ".css"] displayln css-stream]
+    ]]
+
+[define [mk-html-table rs]
+  [html:table [list]
+    [cons
+      [html:tr [list] [map [lambda [x] [apply html:th x]] [stream-car rs]]]
+      [list<-stream
+      [stream-map [lambda [z]
+                    [html:tr [list] [map [lambda [x] [apply html:td x]] z]]]
+      [stream-cdr rs]]]]]]
 

@@ -22,6 +22,12 @@
                              
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+[define [add-covered v s]
+  [stream-append s
+  [stream-concat
+  [stream-map [lambda [x] [mk-covered x v]]
+  s]]]]
+
 [define [mk-covered e v]
   [let [[h [car e]][x [cadr e]][y [caddr e]]]
     [let [[xp [car x]]
@@ -32,17 +38,24 @@
       [for*/list [[i [in-range 0 xs]][j [in-range 0 ys]]]
         [list [cons v [cdr h]] [list [+ xp i] 1] [list [+ yp j] 1]]]]]]]]
       
-[define [add-covered v s]
-  [stream-append s
-  [stream-concat
-  [stream-map [lambda [x] [mk-covered x v]]
-  s]]]]
-
 [define [mk-empty x y tid]
   [stream<-list
   [for*/list [[i [in-range 0 x]][j [in-range 0 y]]]
     [list [list [list [list] "empty"] tid] [list [+ 1 i] 1] [list [+ 1 j] 1]]]]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [xml<-nlist l]
+  [if [null? l] [list]
+    [mk-cell
+      [car l]
+      [map [lambda [e]
+             [if [list? e]
+               [xml<-nlist e]
+               [mk-cell e [list]]]] 
+      [cdr l]]]]]
+
+[define [mk-cell t b]
+  [cons 'cell [cons [list '@ [list 'tag t]] b]]]
 
 [define [nstream<-nlist l]
   [stream<-list
@@ -63,19 +76,6 @@
         x]]
   l]]]
 
-[define [mk-cell t b]
-  [cons 'cell [cons [list '@ [list 'tag t]] b]]]
-
-[define [xml<-nlist l]
-  [if [null? l] [list]
-    [mk-cell
-      [car l]
-      [map [lambda [e]
-             [if [list? e]
-               [xml<-nlist e]
-               [mk-cell e [list]]]] 
-      [cdr l]]]]]
-   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -99,6 +99,12 @@
     [list "0"] 
     [for/list [[i [in-range 0 l]]]
       [pad i [integer-length [sub1 l]] 2]]]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[define [mk-header_enc-xml t tid]
+  [let* [[h [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx t]]]]]
+    [stream-map [cell_mod h tid]
+    [stream<-xbrz [mktz_enc-xml t]]]]]
 
 [define [cell_mod h tid]
   [lambda [z]
@@ -114,11 +120,6 @@
         ]
       ]]]
 
-[define [mk-header_enc-xml t tid]
-  [let* [[h [x_val_def-val_max_height [gnx_def-val_x [xbrt-gnx t]]]]]
-    [stream-map [cell_mod h tid]
-    [stream<-xbrz [mktz_enc-xml t]]]]]
-
 [define [taglist w]
   [if [null? [xbpz-back w]] [list [cadar [caddr [xbrt-val [xbpz-node w]]]]]
     [if [null? [xbrt-val [xbpz-node w]]]
@@ -128,20 +129,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-[define [test-cf tid style]
-  [lambda [x y]
-  [list [list [list [list [cat "h" [car [reverse [caar x]]] "v" [car [reverse [caar y]]] "?"] style]] tid]
-        [list [caadr x] 1]
-        [list [caaddr y] 1]]]]
-
-[define [mk-table-block cellf row-strm col-strm]
-  [stream-concat
-  [stream-map
-    [lambda [y]
-      [stream-map
-        [lambda [x]  [cellf y x]]
-        col-strm]]
-    row-strm]]]
 
 ;[define xcminf [let [[f [lambda [z] [list-ref z 1]]]] [lambda [s] [f [[stream-argext < f] s]]]]]
 ;[define xcmaxf [let [[f [lambda [z] [+ [list-ref z 1] [sub1 [list-ref z 2]]]]]] [lambda [s] [f [[stream-argext > f] s]]]]]
@@ -174,6 +161,9 @@
 [define [cell-filter-y v]
   [lambda [x] [equal? [add1 v] [apply + [caddr x]]]]]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 [define [mk-gen-table-stream xht yht tid dbf xf yf]
   [let [[xpht [xbrt-enc-xml xht]]
         [ypht [xbrt-enc-xml yht]]]
@@ -189,7 +179,16 @@
     [add-covered [list [list] "covered"]
     [stream-append [stream-map xf xhb] [stream-map yf yhb] db [mk-empty yhth xhth tid]]]]]]]]]
 
-[define [table-filter-null s] [stream-filter [lambda [x] [not [null? [caaar x]]]] s]]
+[define [mk-table-block cellf row-strm col-strm]
+  [stream-concat
+  [stream-map
+    [lambda [y]
+      [stream-map
+        [lambda [x]  [cellf y x]]
+        col-strm]]
+    row-strm]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;[html-table-test]
@@ -208,8 +207,7 @@
                      [mk-table-css [stream html_table_stream]]]]
     ]]
 
-[define [test-hf x]
-  [cons [list [cons [list [car [reverse [caar x]]] "ce1"] [caar x]] [cadar x] ] [drop x 1]]]
+[define [table-filter-null s] [stream-filter [lambda [x] [not [null? [caaar x]]]] s]]
 
 [define [html-table-test]
   [let [[tt10 [mk-gen-table-stream
@@ -226,7 +224,19 @@
 ;  [writeln [ods-tab-conv tt20]]
   ]]
 
-[define [col-max x] [+ -1 [caadr x] [cadadr x]]]
+[define [test-hf x]
+  [cons [list [cons [list [car [reverse [caar x]]] "ce1"] [caar x]] [cadar x] ] [drop x 1]]]
+
+[define [test-cf tid style]
+  [lambda [x y]
+  [list [list [list [list [cat "h" [car [reverse [caar x]]] "v" [car [reverse [caar y]]] "?"] style]] tid]
+        [list [caadr x] 1]
+        [list [caaddr y] 1]]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 [define [ods-tab-conv st]
   [let [[col-count [argmax [lambda [x] x] [list<-stream [stream-map col-max st]]]]]  
     [mk-ods-table "ta1" [cons
@@ -236,6 +246,8 @@
     [stream-map [lambda [x] [sort-cells 1 x]]
     [stream-group [lambda [a b] [equal? [caaddr a] [caaddr b]]]
     [sort-cells 2 st]]]]]]]]]
+
+[define [col-max x] [+ -1 [caadr x] [cadadr x]]]
 
 [define [ods-row-conv s]
   [mk-ods-row "ro1" [list<-stream 

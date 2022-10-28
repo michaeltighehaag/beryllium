@@ -2,7 +2,8 @@
 [require sxml]
 
 [provide string-diff]
-
+[provide diff-mod-def]
+[provide diff-gap-def]
 ;; based on pseudocode from https://en.wikipedia.org/wiki/Hirschberg%27s_algorithm ~ 2019/05/10
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;; Hirschberg      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -13,7 +14,7 @@
   [vector-member [vector-argmax [lambda [x] x] v] v]]
 [define [del x] -2]
 [define [ins y] -2]
-[define [sub x y] [if [equal? x y] 2 -1]]
+[define [sub x y] [if [equal? x y] 1 -1]]
 [define [dcons x y]
   [let [[r [string-append "Ret: " x " _ " y]]]
     [cons x y]]] 

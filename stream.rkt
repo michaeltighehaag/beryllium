@@ -51,9 +51,39 @@ including some examples taken from the documentation for srfi/41
                         (cons (stream-car strm) (loop (- n 1) (stream-cdr strm)))))))))
 
 ;*******************************************************************************************
+
+;new replaces nstream<-nlist etc
+[define [deep-stream<-deep-list l]
+  [stream<-list
+  [map [lambda [x]
+         [if [list? x]
+           [stream<-list
+             [map [lambda [e][if [list? e][stream<-list e] e]] x]]
+           x]]
+  l]]]
+
+[define [deep-list<-deep-stream l]
+  [list<-stream
+  [stream-map
+    [lambda [x]
+      [if [stream? x]
+        [list<-stream
+          [stream-map [lambda [e][if [stream? e] [list<-stream e] e]] x]]
+        x]]
+  l]]]
+
 ;*******************************************************************************************
 ;*** Streams ***
 ;***************
+
+;new 
+[define [port<-deep-stream o f x]
+  [if [stream? x]
+    [begin [f "-" o] [stream-for-each [lambda [y] [port<-deep-stream o f y]] x]]
+    [f x o]]]
+;new replace?? 
+[define [disp<-stream x]
+  [port<-deep-stream [current-output-port] displayln x]]
 
 [define [disp-stream x [o [current-output-port]]]
   [if [stream? x]
@@ -66,6 +96,7 @@ including some examples taken from the documentation for srfi/41
     [display x o]]]
 
 [define [string<-disp-stream x] [with-output-to-string [lambda [] [disp-stream x]]]]
+
 
 [define-stream [stream-chunk n strm]
   [if [stream-null? strm]
@@ -206,6 +237,18 @@ including some examples taken from the documentation for srfi/41
   [let [[o [open-output-file file #:exists mode]]]
     [stream-for-each [lambda [x] [pf x o]] strm]
     [close-output-port o]]]
+
+;new replace string<-disp-stream
+[define [string<-stream pf x]
+  [let [[cf [lambda [x] [port<-deep-stream [current-output-port] pf x]]]]
+    [with-output-to-string [lambda [] [cf x]]]]]
+
+;new replaces file<-stream
+[define [filesys<-stream mode file pf strm]
+  [let [[o [open-output-file file #:exists mode]]]
+    [stream-for-each [lambda [x] [pf x o]] strm]
+    [close-output-port o]
+    file]]
 
 [define [stream<-cmd cmd]
   [let-values [[[in-p out-p pid err-p stat]
