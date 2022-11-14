@@ -66,15 +66,27 @@
           [x3d:Material [list [list 'diffuseColor c] [list 'ambientIntensity "0"] [list 'shininess "0"]] [list]]]]
             ]]]]]]]
 
-[define [app c]            
+[define [appr-od c]            
   [x3d:Appearance [list] [list
-    [x3d:Material [list ;      [list 'DEF "Bx_Material"]
+    [x3d:Material [list 
+      ;[list 'DEF "Bx_Material"]
       [list 'diffuseColor c]
       [list 'specularColor "0.5 0.5 0.5"]
       [list 'emissiveColor "0.0 0.0 0.0"]
       [list 'ambientIntensity "0.0"]
       [list 'shininess "0.2"]
       [list 'transparency "0.0"]] [list]] ]] ]
+
+[define [appr-te c]
+  [x3d:Appearance [list] [list
+    [x3d:Material [list
+      ;[list 'DEF mat-name]   
+      [list 'diffuseColor  "0.0 0.0 0.0"]
+      [list 'specularColor "0.0 0.0 0.0"]
+      [list 'emissiveColor c]
+      [list 'ambientIntensity "0.0"]
+      [list 'shininess "0.0"]
+      [list 'transparency "0.5"]] [list]]]]]
 
 [define [mk-x3d scene-list] 
   [x3d:X3D [list
@@ -93,10 +105,10 @@
           [list 'doPickPass "true"]]
         scene-list] ]] ]
 
-[define [sphere r p c]
+[define [sphere r p appr]
   [x3d:Transform [list [list 'translation p ]] [list
     [x3d:Shape [list] [list
-      [app c]  
+      appr  
       [x3d:Sphere [list [list 'radius r]] [list]] ]] ]] ]
 
 [define [points l]
@@ -114,14 +126,15 @@
          [list [x3d:Coordinate [list [list 'point p]] [list]]
                [x3d:Color [list [list 'color c]][list]] ]] ]] ]] ]
 
-[define [face i p c]
+[define [face i p appr]
   [x3d:Transform [list] [list 
     [x3d:Shape [list] [list 
-      [app  c]    
+      appr    
       [x3d:IndexedFaceSet
-        [list [list 'solid "true" ]
+        [list [list 'solid "false" ]
               [list 'coordIndex i]]
         [list [x3d:Coordinate [list [list 'point p]][list]] ]] ]] ]] ]
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -137,6 +150,11 @@
     [close-output-port out-file]]]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define x3dom-css "./xlib/x3dom/x3dom-1.7.2/x3dom.css"
+]
+[define x3dom-js "./xlib/x3dom/x3dom-1.7.2/x3dom-full.js"
+]
+[define jq-js "./xlib/jquery/jquery-2.js"]
 
 [define c-js [cat 
 "function handleEvent(shape, event) \n"
@@ -146,10 +164,47 @@
 "      $(this).attr(\"onmouseover\", \"handleEvent(this)\"); }); }); \n"
 ]]
 
+[define info-block [html:div [list][list [html:h3 [list][list "Last object:"]][html:span [list [list 'id "lastObject"]][list ""]]]]]
 
+[define [list-range n]
+  [for/list [[i [in-range n]]] i]]
+
+[define [coord-index-str l]
+  [apply cat [map [lambda [x] [cat " " [number->string x]]] l]]]
 
 [define [mk-coord-node name points-val]
   [x3d:Coordinate [list [list 'DEF name] [list 'point points-val]] [list]]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[define [mk-face-block id p c cent-coord]
+  [let* [[tag [pad id 5]]
+         [shape-name [cat "shape-" tag]]
+         [mat-name [cat "mat-" tag]]]
+    [list [x3d:Transform [list [list 'translation cent-coord]]
+      [list [x3d:Shape [list [list 'DEF shape-name] [list 'onmouseover "handleEvent(this, onmouseover)"] [list 'ispickable "true"]]
+        [list [appr-te c]
+              [x3d:IndexedFaceSet
+                [list [list 'solid "false" ]
+                      [list 'coordIndex " 0 1 2"]]
+                [list [x3d:Coordinate [list [list 'point p]][list]]]] 
+        ]]]]]]]
+
+;;https://www.web3d.org/x3d/content/examples/Vrml2.0Sourcebook/Chapter13PointsLinesFaces/Figure13_12IndexedFaceSetCubeIndex.html
+[define [mk-x3d-face-test ]
+  [let [[clock-name "clock-0000"]]
+    [append
+      [list [x3d:Background [list [list 'skyColor "0 0 0"]][list]]] 
+      [list [mk-face-block 1 " -1.0 -1.0 -1.0 1.0 -1.0 -1.0 1.0 -1.0 1.0"
+                                 " 0.0 0.5 0.0" " 0.0 0.0 0.0" ]
+            [mk-face-block 2 " 1.0 1.0 1.0 -1.0 1.0 1.0 -1.0 1.0 -1.0"
+                                 " 0.0 0.5 0.0" " 0.0 0.0 0.0" ]]
+    ;[map 
+   ]]]
+
+[define [face-test name]
+  [write-x3d-html [cat "../" name] x3dom-js x3dom-css jq-js c-js [list [mk-x3d [mk-x3d-face-test ]] info-block] ]]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 [define [mk-edge-block clock-name i-list tk kv cv]
   [let* [[edge-tag [cat [pad [car i-list] 5] [pad [cadr i-list] 5]]]
@@ -181,7 +236,6 @@
        [x3d:ROUTE [list [list 'fromField "value_changed"] [list 'fromNode CIname] [list 'toField "emissiveColor"] [list 'toNode mat-name]][list]]
      ]]]
 
-
 [define [mk-x3d-test tk e-list s-list cv]
   [let [[clock-name "clock-0000"]]
     [append [list
@@ -194,14 +248,7 @@
             [list [billboard "0.0 0.0 0.0" 0.3 "testing x3d" "0.50 0.75 0.50"]]
             ]]]
 
-[define info-block [html:div [list][list [html:h3 [list][list "Last object:"]][html:span [list [list 'id "lastObject"]][list ""]]]]]
-
-
-[define [test-x3d name x3dom-js x3dom-css jq-js x3d-list]
-  [write-x3d-html name x3dom-js x3dom-css jq-js c-js [list [mk-x3d x3d-list] info-block] ]]
-
-
-[define coord-vec [apply vector [map str<-vec [map list->vector [shuffle [all-comb 3 [list -1 1]]]]]]]
+[define mk-test-coord-vec [apply vector [map str<-vec [map list->vector [shuffle [all-comb 3 [list -1 1]]]]]]]
 
 [define test-edge-list
   [let [[z [shuffle [uni-comb 2 [list 0 1 2 3 4 5 6 7]]]]]
@@ -216,14 +263,12 @@
             [str<-vec [vector-map [curry * 6] [vector-map [lambda [x][+ [random] [ - 0.5]]] [make-vector 3 0]]]]
             [apply cat [map str<-vec [map list->vector [cons [list-ref cl 2] cl]]]]]]]]
 
-[define x3d-test-list [mk-x3d-test "0.0 0.333 0.666 1.0" test-edge-list test-shape-list coord-vec]]
+[define x3d-test-list [mk-x3d-test "0.0 0.333 0.666 1.0" test-edge-list test-shape-list mk-test-coord-vec]]
 
-[define x3dom-css 
-"./xlib/x3dom/x3dom-1.7.2/x3dom.css"
-]
-[define x3dom-js 
-"./xlib/x3dom/x3dom-1.7.2/x3dom-full.js"
-]
-[define jq-js 
+[define [clock-test name]
+  [write-x3d-html [cat "../" name] x3dom-js x3dom-css jq-js c-js [list [mk-x3d x3d-test-list] info-block] ]]
 
-"./xlib/jquery/jquery-2.js"]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+

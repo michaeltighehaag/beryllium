@@ -246,6 +246,29 @@ refactor gbk-sub-key use to account for streams
          [x [gnx_def xk xv xn]]]
     [xbrt_test b null x null null]]]
 
+;;;;;;;;;;;;;;;;;;;;
+[struct xbrt_ctest xbrt [] #:transparent
+  #:methods gen:gxbrt
+  [[define [xbrt-set t k v]
+     [x_set t [rbk<-string k] [cons k v] [mk_xbrt_xf [xbrt-gnx t]] xbrt_ctest]]
+   [define [xbrt-get t k]
+      [inn xbrt-val [x_nget t [rbk<-string k] null]]]
+   [define [xbrt-xget t k]
+      [inn xbrt-gnx [x_nget t [rbk<-string k] null]]]
+   [define [xbrt-nget t k]
+      [x_nget t [rbk<-string k] null]]
+   [define [xbrt-del t k]
+     [x_del t [rbk<-string k] [mk_xbrt_xf [xbrt-gnx t]] xbrt_ctest]]
+]]
+
+[define xbrt_ctest_root
+  [let* [[b [rbk<-string ""]]
+         [xk [kx-f null null null]]
+         [xv [vx-f null null null]]
+         [xn [nx-f null null null]]
+         [x [gnx_def xk xv xn]]]
+    [xbrt_ctest b null x null null]]]
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

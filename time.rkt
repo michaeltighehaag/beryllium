@@ -18,10 +18,10 @@ Useful date and time functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;*******************************************************************************************
 [define [timestamp [d [current-date]]]
-  [pad [string->number [srfi19:date->string d "~s~N"]] 20]]
+  [pad [string->number [srfi19:date->string d "~s~N"]] 24]]
 
-[define [datestamp [d [current-date]]]
-  [srfi19:date->string d "~Y~m~d~H~M~S~N"]]
+[define [datestamp n [d [current-date]]]
+  [substring [srfi19:date->string d "~Y~m~d~H~M~S~N"] 0 [min n 23]]]
 
 [define [noon-seconds [cd [current-date]]]
   [find-seconds 0 0 12 [date-day cd] [date-month cd] [date-year cd]]]
